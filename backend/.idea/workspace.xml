@@ -6,11 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="90717aea-3de8-40cc-807d-ea938c773218" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/dev.db" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/dev.db" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/drones.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/drones.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sdk/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../sdk/src/index.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,7 +66,8 @@
       <workItem from="1748083515520" duration="2134000" />
       <workItem from="1748085656681" duration="123000" />
       <workItem from="1748085785195" duration="12125000" />
-      <workItem from="1748101773610" duration="368000" />
+      <workItem from="1748101773610" duration="2660000" />
+      <workItem from="1748104818389" duration="52000" />
     </task>
     <servers />
   </component>

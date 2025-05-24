@@ -14,6 +14,7 @@ import {
 import {prisma} from './prisma';
 import events from 'events';
 import {Prisma} from '@prisma/client';
+import {promisify} from "util";
 
 export class DroneDTO {
     @IsNotEmpty()
@@ -128,7 +129,7 @@ export class MissionRaportDTO {
     imagesBlobBase64: string[] = [];
 }
 
-// event emmiter for drone tasks:
+// event emitter for drone tasks:
 const droneTaskListener = new events.EventEmitter();
 
 async function departDronesForMission() {
@@ -191,6 +192,10 @@ export class Drone {
             }
         });
 
+        ws.on('close', async () => {
+            await this.handleDisconnect();
+        });
+
         droneTaskListener.on(this.drone.id, async (data) => {
             try {
                 await this.handleMessage(data);
@@ -199,7 +204,7 @@ export class Drone {
             }
         });
     }
-    
+
     async handleMessage(data: any) {
         switch (data.type) {
             case 'toDrone:depart':
@@ -239,7 +244,7 @@ export class Drone {
         await prisma.mission.updateMany({
             where: {
                 drones: {
-                    every: { isOnMission: false }
+                    every: {isOnMission: false}
                 }
             },
             data: {
@@ -282,6 +287,10 @@ export class Drone {
     }
 
     async departTheDrone(mission: Prisma.MissionCreateInput) {
-        // TODO: send info via WebSocket to the drone
+        const wsSend = promisify(this.ws.send);
+        await wsSend(JSON.stringify({
+            type: 'toDrone:depart',
+            missionDetails: mission
+        }))
     }
 }

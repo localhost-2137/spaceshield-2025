@@ -11,10 +11,11 @@ app.use(bodyParser.json());
 
 const wsServer = new Server({noServer: true});
 
-async function handleWsMessages(ws: WebSocket, req: any) {
+async function handleWsMessages(ws: WebSocket, req: any, unsubscribe: () => void) {
     switch (req.type) {
         case 'fromDrone:register':
             await Drone.fromWebSocket(ws, req.droneData);
+            unsubscribe();
             break;
         default:
             console.error('Unknown request type:', req.type);
@@ -22,14 +23,18 @@ async function handleWsMessages(ws: WebSocket, req: any) {
 }
 
 wsServer.on('connection', (ws) => {
-    ws.on('message', async msg => {
+    const handleMessages = async (msg: any) => {
+        // it allows to unsubscribe from the 'message' event if e.g. the logic has been moved to another part of the codebase
+        const unsubscribe = () => ws.off('message', handleMessages);
         try {
             const data = JSON.parse(msg.toString());
-            await handleWsMessages(ws, data);
+            await handleWsMessages(ws, data, unsubscribe);
         } catch (e) {
             console.error('Failed to parse WebSocket message:', e);
         }
-    });
+    };
+
+    ws.on('message', handleMessages);
 });
 
 async function bootstrap() {

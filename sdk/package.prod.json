@@ -15,5 +15,7 @@
       "require": "./index.cjs"
     }
   },
-  "dependencies": {}
+  "dependencies": {
+    "ws": "^8.18.2"
+  }
 }
