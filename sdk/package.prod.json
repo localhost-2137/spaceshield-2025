@@ -1,0 +1,19 @@
+{
+  "name": "uber-less-sdk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/localhost-2137/spacehield-2025"
+  },
+  "version": "0.0.1",
+  "module": "./index.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "umd": "./index.umd.js",
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "require": "./index.cjs"
+    }
+  },
+  "dependencies": {}
+}

@@ -1,5 +1,6 @@
 import {WebSocket} from 'ws';
 import {
+    IsArray,
     IsBoolean,
     IsEnum,
     IsNotEmpty,
@@ -108,6 +109,25 @@ export class DroneDTO {
     isOnMission: boolean = false;
 }
 
+export class MissionRaportDTO {
+    @IsNotEmpty()
+    @IsString()
+    missionId!: string;
+
+    @IsNotEmpty()
+    @IsString()
+    droneId!: string;
+
+    @IsOptional()
+    @IsString()
+    reportContent?: string;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({each: true})
+    imagesBlobBase64: string[] = [];
+}
+
 // event emmiter for drone tasks:
 const droneTaskListener = new events.EventEmitter();
 
@@ -154,7 +174,7 @@ export class Drone {
         await prisma.drone.upsert({
             where: {id: this.drone.id},
             update: this.drone,
-            create: this.drone
+            create: this.drone,
         });
     }
 
@@ -179,7 +199,7 @@ export class Drone {
             }
         });
     }
-
+    
     async handleMessage(data: any) {
         switch (data.type) {
             case 'toDrone:depart':
@@ -194,31 +214,65 @@ export class Drone {
             case 'fromDrone:update':
                 await this.updateDroneData(data.droneData);
                 break;
+            case 'fromDrone:missionRaport':
+                await this.processMissionRaport(data.raport);
+                break;
+            case 'fromDrone:cameFromMission':
+                await this.handleCameFromMission();
+                break;
             default:
                 console.warn(`Unknown message type: ${data.type}`);
         }
-    }
-
-    async updateDroneLocation(location: {latitude: number, longitude: number}) {
-        await prisma.drone.update({
-            where: {id: this.drone.id},
-            data: {
-                currentLatitude: location.latitude,
-                currentLongitude: location.longitude
-            }
-        });
-
-        // Optionally, send the updated location back to the drone
-        this.ws.send(JSON.stringify({
-            type: 'fromDrone:updateLocation',
-            location
-        }));
     }
 
     async handleDisconnect() {
         this.drone.isActive = false;
         await this.syncWithDatabase();
         this.ws.close();
+    }
+
+    async handleCameFromMission() {
+        this.drone.isOnMission = false;
+        await this.syncWithDatabase();
+
+        // if all drones came back from mission, set mission as completed
+        await prisma.mission.updateMany({
+            where: {
+                drones: {
+                    every: { isOnMission: false }
+                }
+            },
+            data: {
+                endTime: new Date(),
+                isCompleted: true,
+            }
+        });
+    }
+
+    async processMissionRaport(raport: MissionRaportDTO) {
+        await validateOrReject(raport);
+        const existingRaport = await prisma.missionReport.findUnique({
+            where: {missionId: raport.missionId}
+        });
+
+        if (existingRaport) {
+            console.warn(`Mission report for mission ${raport.missionId} already exists.`);
+            return;
+        }
+
+        await prisma.missionReport.create({
+            data: {
+                missionId: raport.missionId,
+                droneId: raport.droneId,
+                reportContent: raport.reportContent,
+                reportDate: new Date(),
+                ReportImages: {
+                    create: raport.imagesBlobBase64.map((image) => ({
+                        imageBlobBase64: image,
+                    }))
+                }
+            }
+        });
     }
 
     async updateDroneData(droneData: DroneDTO) {

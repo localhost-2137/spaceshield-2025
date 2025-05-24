@@ -8,10 +8,10 @@ datasource db {
 }
 
 model Mission {
-  id                String    @id @unique
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  isCompleted       Boolean   @default(false)
+  id                String         @id @unique
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  isCompleted       Boolean        @default(false)
   name              String
   description       String
   locationLongitude Float
@@ -20,7 +20,27 @@ model Mission {
   expectedEndTime   DateTime
   goal              String
   endTime           DateTime?
-  drones            Drone[]   @relation("MissionDrones")
+  drones            Drone[]        @relation("MissionDrones")
+  MissionReport     MissionReport?
+}
+
+model ReportImage {
+  id       Int           @id @default(autoincrement())
+  reportId Int
+  report   MissionReport @relation(fields: [reportId], references: [id])
+}
+
+model MissionReport {
+  id            Int           @id @default(autoincrement())
+  missionId     String        @unique
+  droneId       String
+  mission       Mission       @relation(fields: [missionId], references: [id])
+  drone         Drone         @relation(fields: [droneId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  reportDate    DateTime
+  reportContent String?
+  ReportImages   ReportImage[]
 }
 
 model Drone {
@@ -46,5 +66,6 @@ model Drone {
   maxLoadKg          Int
   specialization     String
 
-  missions Mission[] @relation("MissionDrones")
+  missions      Mission[]       @relation("MissionDrones")
+  MissionReport MissionReport[]
 }

@@ -9,4 +9,6 @@ RUN pnpm install
 
 COPY . .
 
+RUN pnpm prisma:gen
+
 CMD ["pnpm", "watch"]

@@ -1,0 +1,31 @@
+{
+  "name": "uber-less-sdk",
+  "type": "module",
+  "scripts": {
+    "dev": "vite serve",
+    "build": "rimraf build/**/* && tsc && vite build && cpy ./README.md ./build/ && cpy ./package.prod.json build --rename=package.json",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint:scripts": "eslint . --ext .ts",
+    "lint:styles": "stylelint ./**/*.{css,scss}",
+    "format:scripts": "prettier . --write",
+    "format:styles": "stylelint ./**/*.{css,scss} --fix",
+    "format": "npm run format:scripts && npm run format:styles"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/wellknown": "^0.5.8",
+    "cpy-cli": "^5.0.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "rimraf": "^6.0.1",
+    "terser": "^5.39.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "vite": "6.3.4",
+    "vite-plugin-dts-bundle-generator": "^2.1.0",
+    "vitest": "3.0.5"
+  },
+  "dependencies": {}
+}
