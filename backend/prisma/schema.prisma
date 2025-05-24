@@ -49,6 +49,7 @@ model Drone {
   updatedAt          DateTime @updatedAt
   isActive           Boolean  @default(true)
   isOnMission        Boolean  @default(false)
+  gotFlightPermit    Boolean  @default(false)
   currentLongitude   Float
   currentLatitude    Float
   name               String

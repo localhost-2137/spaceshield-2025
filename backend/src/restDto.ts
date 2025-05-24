@@ -26,8 +26,8 @@ export class CreateMissionDTO {
     expectedEndTime?: number;
 
     @IsNotEmpty()
-    @IsEnum(['rescue', 'reconnaissance', 'assault', 'transport', 'agriculture', 'delivery'])
-    goal!: 'rescue' | 'reconnaissance' | 'assault' | 'transport' | 'agriculture' | 'delivery';
+    @IsEnum(['rescue', 'reconnaissance', 'assault', 'agriculture', 'delivery'])
+    goal!: 'rescue' | 'reconnaissance' | 'assault' | 'agriculture' | 'delivery';
 
     @IsOptional()
     @IsString({each: true})

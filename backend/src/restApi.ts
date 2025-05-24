@@ -3,6 +3,7 @@ import {prisma} from "./prisma";
 import express from 'express';
 import {CreateMissionDTO} from "./restDto";
 import {validateDto} from "./utils";
+import {droneTaskListener} from "./drones";
 
 const router = express.Router();
 
@@ -14,6 +15,22 @@ router.get('/drones', async (req, res) => {
         res.json(drones);
     } catch (err) {
         console.error('Failed to fetch drones:', err);
+        res.status(500).json({error: 'Internal Server Error'});
+    }
+});
+
+router.get('/missions', async (req, res) => {
+    try {
+        const missions = await prisma.mission.findMany({
+            include: {
+                drones: {
+                    select: {id: true}
+                }
+            }
+        });
+        res.json(missions);
+    } catch (err) {
+        console.error('Failed to fetch missions:', err);
         res.status(500).json({error: 'Internal Server Error'});
     }
 });
@@ -69,6 +86,29 @@ router.post('/mission/:id/assign', async (req, res) => {
         console.error('Failed to assign drones to mission:', err);
         res.status(500).json({error: 'Internal Server Error'});
     }
+});
+
+// Gets flight permit for all drones assigned to the mission
+router.post('/mission/:id/get-flight-permit', async (req, res) => {
+    const missionId = req.params.id;
+
+    const dronesIds = await prisma.mission.findUnique({
+        where: {id: missionId},
+        select: {
+            drones: {
+                select: {id: true}
+            }
+        }
+    }).then(mission => mission?.drones.map(drone => drone.id) || []);
+
+    if (dronesIds.length === 0) {
+        res.status(200).json({message: 'No drones assigned to this mission.'});
+        return;
+    }
+
+    dronesIds.forEach(id => {
+        droneTaskListener.emit(id, {type: 'toDron:getFlightPermit'});
+    });
 });
 
 // Endpoint to start a mission immediately

@@ -1,4 +1,4 @@
-import { WebSocket } from 'ws';
+import {WebSocket} from 'ws';
 import {
     IsArray,
     IsBoolean,
@@ -9,12 +9,10 @@ import {
     IsString,
     Max,
     Min,
-    validateOrReject
 } from 'class-validator';
-import {ClassConstructor, plainToInstance} from 'class-transformer';
-import { prisma } from './prisma';
+import {prisma} from './prisma';
 import events from 'events';
-import { promisify } from "util";
+import {promisify} from "util";
 import {validateDto} from "./utils";
 
 export class DroneDTO {
@@ -97,8 +95,8 @@ export class DroneDTO {
     maxLoadKg!: number;
 
     @IsNotEmpty()
-    @IsEnum(['rescue', 'reconnaissance', 'assault', 'transport', 'agriculture', 'delivery'])
-    specialization!: 'rescue' | 'reconnaissance' | 'assault' | 'transport' | 'agriculture' | 'delivery';
+    @IsEnum(['rescue', 'reconnaissance', 'assault', 'agriculture', 'delivery'])
+    specialization!: 'rescue' | 'reconnaissance' | 'assault' | 'agriculture' | 'delivery';
 
     @IsOptional()
     @IsNotEmpty()
@@ -109,6 +107,11 @@ export class DroneDTO {
     @IsNotEmpty()
     @IsBoolean()
     isOnMission: boolean = false;
+
+    @IsOptional()
+    @IsNotEmpty()
+    @IsBoolean()
+    gotFlightPermit: boolean = false;
 }
 
 export class MissionRaportDTO {
@@ -126,7 +129,7 @@ export class MissionRaportDTO {
 
     @IsOptional()
     @IsArray()
-    @IsString({ each: true })
+    @IsString({each: true})
     imagesBlobBase64: string[] = [];
 }
 
@@ -160,12 +163,12 @@ export class MissionDetailsDTO {
     expectedEndTime?: number;
 
     @IsNotEmpty()
-    @IsEnum(['rescue', 'reconnaissance', 'assault', 'transport', 'agriculture', 'delivery'])
-    goal!: 'rescue' | 'reconnaissance' | 'assault' | 'transport' | 'agriculture' | 'delivery';
+    @IsEnum(['rescue', 'reconnaissance', 'assault', 'agriculture', 'delivery'])
+    goal!: 'rescue' | 'reconnaissance' | 'assault' | 'agriculture' | 'delivery';
 }
 
 // event emitter for drone tasks:
-const droneTaskListener = new events.EventEmitter();
+export const droneTaskListener = new events.EventEmitter();
 
 async function departDronesForMission() {
     // query drones, which right now should be on mission but are not
@@ -173,20 +176,20 @@ async function departDronesForMission() {
         select: {
             id: true,
             missions: {
-                where: { startTime: { lte: new Date() } }, // missions that have started
+                where: {startTime: {lte: new Date()}}, // missions that have started
                 select: {
-                        id: true,
-                        name: true,
-                        description: true,
-                        locationLongitude: true,
-                        locationLatitude: true,
-                        startTime: true,
-                        expectedEndTime: true,
-                        goal: true,
+                    id: true,
+                    name: true,
+                    description: true,
+                    locationLongitude: true,
+                    locationLatitude: true,
+                    startTime: true,
+                    expectedEndTime: true,
+                    goal: true,
                 }
             }
         },
-        where: { isActive: true, isOnMission: false }
+        where: {isActive: true, isOnMission: false}
     });
 
     const promises = drones.map(async drone => {
@@ -233,7 +236,7 @@ export class Drone {
 
     async syncWithDatabase() {
         await prisma.drone.upsert({
-            where: { id: this.drone.id },
+            where: {id: this.drone.id},
             update: this.drone,
             create: this.drone,
         });
@@ -276,6 +279,12 @@ export class Drone {
                 await this.departTheDrone(data.missionDetails);
                 await this.syncWithDatabase();
                 break;
+            case 'toDrone:getFlightPermit':
+                await this.getFlightPermit();
+                break;
+            case 'fromDrone:gotFlightPermit':
+                await this.gotFlightPermit();
+                break;
             case 'fromDrone:update':
                 await this.updateDroneData(data.droneData);
                 break;
@@ -298,13 +307,14 @@ export class Drone {
 
     async handleCameFromMission() {
         this.drone.isOnMission = false;
+        this.drone.gotFlightPermit = false;
         await this.syncWithDatabase();
 
         // if all drones came back from mission, set mission as completed
         await prisma.mission.updateMany({
             where: {
                 drones: {
-                    every: { isOnMission: false }
+                    every: {isOnMission: false}
                 }
             },
             data: {
@@ -317,7 +327,7 @@ export class Drone {
     async processMissionRaport(raport: MissionRaportDTO) {
         raport = await validateDto(MissionRaportDTO, raport);
         const existingRaport = await prisma.missionReport.findUnique({
-            where: { missionId: raport.missionId }
+            where: {missionId: raport.missionId}
         });
 
         if (existingRaport) {
@@ -344,6 +354,18 @@ export class Drone {
         droneData = await validateDto(DroneDTO, droneData);
         this.drone = droneData;
         await this.syncWithDatabase();
+    }
+
+    async gotFlightPermit() {
+        this.drone.gotFlightPermit = true;
+        await this.syncWithDatabase();
+    }
+
+    async getFlightPermit() {
+        const wsSend = promisify(this.ws.send);
+        await wsSend(JSON.stringify({
+            type: 'toDrone:getFlightPermit'
+        }));
     }
 
     async departTheDrone(mission: MissionDetailsDTO) {
