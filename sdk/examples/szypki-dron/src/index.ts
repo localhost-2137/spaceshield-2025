@@ -1,6 +1,6 @@
 import {DroneSDK, GeneralDroneInfo, MissionDetails} from 'uber-less-sdk';
 
-const generalDroneInfo: GeneralDroneInfo = {
+const generalInfo: GeneralDroneInfo = {
     id: '7914a2f7-a8ff-4314-a294-0b01993037d0',
     name: 'SkyWatcher',
     description: 'A versatile drone for various missions.',
@@ -18,7 +18,7 @@ const generalDroneInfo: GeneralDroneInfo = {
 }
 
 const sdk = new DroneSDK({
-    generalInfo: generalDroneInfo,
+    generalInfo,
     getLocation,
     getBatteryPercentage,
     onMissionDepart,

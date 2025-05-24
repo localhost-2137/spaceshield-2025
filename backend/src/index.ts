@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import {Server, WebSocket} from 'ws';
 import {initPrisma, prisma} from './prisma';
 import {Drone} from "./drones";
+import {wsFrontServer} from "./front";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -58,9 +59,17 @@ async function bootstrap() {
     });
 
     server.on('upgrade', (request, socket, head) => {
-        wsServer.handleUpgrade(request, socket, head, (ws) => {
-            wsServer.emit('connection', ws, request);
-        });
+        switch (request.url || '') {
+            case "/front":
+                wsFrontServer.handleUpgrade(request, socket, head, (ws) => {
+                    wsFrontServer.emit('connection', ws, request);
+                });
+                break;
+            default:
+                wsServer.handleUpgrade(request, socket, head, (ws) => {
+                    wsServer.emit('connection', ws, request);
+                });
+        }
     });
 }
 
