@@ -1,4 +1,4 @@
-import {WebSocket} from 'ws';
+import { WebSocket } from 'ws';
 import {
     IsArray,
     IsBoolean,
@@ -11,10 +11,10 @@ import {
     Min,
     validateOrReject
 } from 'class-validator';
-import {prisma} from './prisma';
+import { prisma } from './prisma';
 import events from 'events';
-import {Prisma} from '@prisma/client';
-import {promisify} from "util";
+import { Prisma } from '@prisma/client';
+import { promisify } from "util";
 
 export class DroneDTO {
     @IsNotEmpty()
@@ -96,8 +96,8 @@ export class DroneDTO {
     maxLoadKg!: number;
 
     @IsNotEmpty()
-    @IsEnum(['rescue', 'reconnaissance', 'assault'])
-    specialization!: 'rescue' | 'reconnaissance' | 'assault';
+    @IsEnum(['rescue', 'reconnaissance', 'assault', 'transport', 'agriculture', 'delivery'])
+    specialization!: 'rescue' | 'reconnaissance' | 'assault' | 'transport' | 'agriculture' | 'delivery';
 
     @IsOptional()
     @IsNotEmpty()
@@ -125,7 +125,7 @@ export class MissionRaportDTO {
 
     @IsOptional()
     @IsArray()
-    @IsString({each: true})
+    @IsString({ each: true })
     imagesBlobBase64: string[] = [];
 }
 
@@ -138,10 +138,10 @@ async function departDronesForMission() {
         select: {
             id: true,
             missions: {
-                where: {startTime: {lte: new Date()}}, // missions that have started
+                where: { startTime: { lte: new Date() } }, // missions that have started
             }
         },
-        where: {isActive: true, isOnMission: false}
+        where: { isActive: true, isOnMission: false }
     });
 
     drones.forEach(drone => {
@@ -173,7 +173,7 @@ export class Drone {
 
     async syncWithDatabase() {
         await prisma.drone.upsert({
-            where: {id: this.drone.id},
+            where: { id: this.drone.id },
             update: this.drone,
             create: this.drone,
         });
@@ -244,7 +244,7 @@ export class Drone {
         await prisma.mission.updateMany({
             where: {
                 drones: {
-                    every: {isOnMission: false}
+                    every: { isOnMission: false }
                 }
             },
             data: {
@@ -257,7 +257,7 @@ export class Drone {
     async processMissionRaport(raport: MissionRaportDTO) {
         await validateOrReject(raport);
         const existingRaport = await prisma.missionReport.findUnique({
-            where: {missionId: raport.missionId}
+            where: { missionId: raport.missionId }
         });
 
         if (existingRaport) {
