@@ -5,6 +5,8 @@ import LandingPage from "./Sites/LandingPage/LandingPage";
 import { AnimatePresence } from "framer-motion";
 import MissionsPage from "./Sites/Missions/MissionsPage";
 import AppLandingPage from "./Sites/AppLandingPage/AppLandingPage";
+import MapPage from "./Sites/Map/MapPage";
+import MarketPlacePage from "./Sites/MarketPlacePage/MarketPlacePage";
 
 export default function App(): JSX.Element | null {
   const element = useRoutes([
@@ -23,6 +25,14 @@ export default function App(): JSX.Element | null {
         {
           path: "missions",
           element: <MissionsPage />,
+        },
+        {
+          path: "globe",
+          element: <MapPage />,
+        },
+        {
+          path: "marketplace",
+          element: <MarketPlacePage />,
         },
       ],
     },
