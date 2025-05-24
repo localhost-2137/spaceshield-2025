@@ -1,300 +1,359 @@
-import { WebSocket } from "ws";
+import { WebSocket } from 'ws';
 import {
-  IsArray,
-  IsBoolean,
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-  validateOrReject,
-} from "class-validator";
-import { prisma } from "./prisma";
-import events from "events";
-import { Prisma } from "@prisma/client";
+    IsArray,
+    IsBoolean,
+    IsEnum,
+    IsNotEmpty,
+    IsNumber,
+    IsOptional,
+    IsString,
+    Max,
+    Min,
+    validateOrReject
+} from 'class-validator';
+import {ClassConstructor, plainToInstance} from 'class-transformer';
+import { prisma } from './prisma';
+import events from 'events';
+import { promisify } from "util";
 
 export class DroneDTO {
-  @IsNotEmpty()
-  @IsString()
-  id!: string;
+    @IsNotEmpty()
+    @IsString()
+    id!: string;
 
-  @IsNotEmpty()
-  @IsString()
-  name!: string;
+    @IsNotEmpty()
+    @IsString()
+    name!: string;
 
-  @IsNotEmpty()
-  @IsString()
-  description!: string;
+    @IsNotEmpty()
+    @IsString()
+    description!: string;
 
-  @IsNotEmpty()
-  @IsEnum(["land", "water", "air", "space"])
-  type!: "land" | "water" | "air" | "space";
+    @IsNotEmpty()
+    @IsEnum(['land', 'water', 'air', 'space'])
+    type!: 'land' | 'water' | 'air' | 'space';
 
-  @IsNotEmpty()
-  @IsEnum(["fuel", "electric"])
-  engineType!: "fuel" | "electric";
+    @IsNotEmpty()
+    @IsEnum(['fuel', 'electric'])
+    engineType!: 'fuel' | 'electric';
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  fuelOrBatteryLevel!: number;
+    @IsNotEmpty()
+    @IsNumber()
+    @Min(0)
+    @Max(100)
+    fuelOrBatteryLevel!: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(-90)
-  @Max(90)
-  currentLatitude!: number;
+    @IsNotEmpty()
+    @IsNumber()
+    @Min(-90)
+    @Max(90)
+    currentLatitude!: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(-180)
-  @Max(180)
-  currentLongitude!: number;
+    @IsNotEmpty()
+    @IsNumber()
+    @Min(-180)
+    @Max(180)
+    currentLongitude!: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(0)
-  maxSpeedKmh!: number;
+    @IsNotEmpty()
+    @IsNumber()
+    @Min(0)
+    maxSpeedKmh!: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(0)
-  maxDistanceKm!: number;
+    @IsNotEmpty()
+    @IsNumber()
+    @Min(0)
+    maxDistanceKm!: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(0)
-  pricePerHourUSD!: number;
+    @IsNotEmpty()
+    @IsNumber()
+    @Min(0)
+    pricePerHourUSD!: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(0)
-  noiseLevelDb!: number;
+    @IsNotEmpty()
+    @IsNumber()
+    @Min(0)
+    noiseLevelDb!: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(0)
-  lengthCm!: number;
+    @IsNotEmpty()
+    @IsNumber()
+    @Min(0)
+    lengthCm!: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(0)
-  widthCm!: number;
+    @IsNotEmpty()
+    @IsNumber()
+    @Min(0)
+    widthCm!: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(0)
-  heightCm!: number;
+    @IsNotEmpty()
+    @IsNumber()
+    @Min(0)
+    heightCm!: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(0)
-  maxLoadKg!: number;
+    @IsNotEmpty()
+    @IsNumber()
+    @Min(0)
+    maxLoadKg!: number;
 
-  @IsNotEmpty()
-  @IsEnum(["rescue", "reconnaissance", "assault"])
-  specialization!:
-    | "rescue"
-    | "reconnaissance"
-    | "assault"
-    | "transport"
-    | "agriculture"
-    | "delivery";
+    @IsNotEmpty()
+    @IsEnum(['rescue', 'reconnaissance', 'assault', 'transport', 'agriculture', 'delivery'])
+    specialization!: 'rescue' | 'reconnaissance' | 'assault' | 'transport' | 'agriculture' | 'delivery';
 
-  @IsOptional()
-  @IsNotEmpty()
-  @IsBoolean()
-  isActive: boolean = true;
+    @IsOptional()
+    @IsNotEmpty()
+    @IsBoolean()
+    isActive: boolean = true;
 
-  @IsOptional()
-  @IsNotEmpty()
-  @IsBoolean()
-  isOnMission: boolean = false;
+    @IsOptional()
+    @IsNotEmpty()
+    @IsBoolean()
+    isOnMission: boolean = false;
 }
 
 export class MissionRaportDTO {
-  @IsNotEmpty()
-  @IsString()
-  missionId!: string;
+    @IsNotEmpty()
+    @IsString()
+    missionId!: string;
 
-  @IsNotEmpty()
-  @IsString()
-  droneId!: string;
+    @IsNotEmpty()
+    @IsString()
+    droneId!: string;
 
-  @IsOptional()
-  @IsString()
-  reportContent?: string;
+    @IsOptional()
+    @IsString()
+    reportContent?: string;
 
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  imagesBlobBase64: string[] = [];
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    imagesBlobBase64: string[] = [];
 }
 
-// event emmiter for drone tasks:
+export class MissionDetailsDTO {
+    @IsNotEmpty()
+    @IsString()
+    id!: string;
+
+    @IsNotEmpty()
+    @IsString()
+    name!: string;
+
+    @IsNotEmpty()
+    @IsString()
+    description!: string;
+
+    @IsNotEmpty()
+    @IsNumber()
+    locationLongitude!: number;
+
+    @IsNotEmpty()
+    @IsNumber()
+    locationLatitude!: number;
+
+    @IsNotEmpty()
+    @IsNumber()
+    startTime!: number;
+
+    @IsOptional()
+    @IsNumber()
+    expectedEndTime?: number;
+
+    @IsNotEmpty()
+    @IsString()
+    goal!: string;
+}
+
+// event emitter for drone tasks:
 const droneTaskListener = new events.EventEmitter();
 
 async function departDronesForMission() {
-  // query drones, which right now should be on mission but are not
-  const drones = await prisma.drone.findMany({
-    select: {
-      id: true,
-      missions: {
-        where: { startTime: { lte: new Date() } }, // missions that have started
-      },
-    },
-    where: { isActive: true, isOnMission: false },
-  });
-
-  drones.forEach((drone) => {
-    if (drone.missions.length === 0) return;
-    if (drone.missions.length > 1) {
-      console.warn(
-        `Drone ${drone.id} has multiple missions, sending it to the first one.`
-      );
-    }
-    const mission = drone.missions[0];
-
-    droneTaskListener.emit(drone.id, {
-      type: "drone:depart",
-      missionDetails: mission,
+    // query drones, which right now should be on mission but are not
+    const drones = await prisma.drone.findMany({
+        select: {
+            id: true,
+            missions: {
+                where: { startTime: { lte: new Date() } }, // missions that have started
+                select: {
+                        id: true,
+                        name: true,
+                        description: true,
+                        locationLongitude: true,
+                        locationLatitude: true,
+                        startTime: true,
+                        expectedEndTime: true,
+                        goal: true,
+                }
+            }
+        },
+        where: { isActive: true, isOnMission: false }
     });
-  });
+
+    const promises = drones.map(async drone => {
+        if (drone.missions.length === 0) return;
+        if (drone.missions.length > 1) {
+            console.warn(`Drone ${drone.id} has multiple missions, sending it to the first one.`);
+        }
+        const mission = drone.missions[0];
+        let missionDetails: MissionDetailsDTO = {
+            id: mission.id,
+            name: mission.name,
+            description: mission.description,
+            locationLongitude: mission.locationLongitude,
+            locationLatitude: mission.locationLatitude,
+            startTime: mission.startTime.getTime(),
+            expectedEndTime: mission.expectedEndTime ? mission.expectedEndTime.getTime() : undefined,
+            goal: mission.goal
+        };
+        missionDetails = await validate(MissionDetailsDTO, missionDetails);
+
+        droneTaskListener.emit(drone.id, {
+            type: 'drone:depart',
+            missionDetails,
+        });
+    });
+
+    await Promise.all(promises);
+}
+
+async function validate(cls: ClassConstructor<any>, obj: any): Promise<any> {
+    const instance = plainToInstance(cls, obj);
+    await validateOrReject(instance);
+    return instance;
 }
 
 export class Drone {
-  private ws: WebSocket;
-  private drone: DroneDTO;
+    private ws: WebSocket;
+    private drone: DroneDTO;
 
-  public static async fromWebSocket(
-    ws: WebSocket,
-    droneData: DroneDTO
-  ): Promise<Drone> {
-    await validateOrReject(droneData);
-    const drone = new Drone(ws, droneData);
+    public static async fromWebSocket(ws: WebSocket, droneData: DroneDTO): Promise<Drone> {
+        droneData = await validate(DroneDTO, droneData);
+        const drone = new Drone(ws, droneData);
 
-    await drone.syncWithDatabase();
+        await drone.syncWithDatabase();
 
-    return drone;
-  }
+        return drone;
+    }
 
-  async syncWithDatabase() {
-    await prisma.drone.upsert({
-      where: { id: this.drone.id },
-      update: this.drone,
-      create: this.drone,
-    });
-  }
+    async syncWithDatabase() {
+        await prisma.drone.upsert({
+            where: { id: this.drone.id },
+            update: this.drone,
+            create: this.drone,
+        });
+    }
 
-  constructor(ws: WebSocket, drone: DroneDTO) {
-    this.ws = ws;
-    this.drone = drone;
+    constructor(ws: WebSocket, drone: DroneDTO) {
+        this.ws = ws;
+        this.drone = drone;
 
-    ws.on("message", async (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        await this.handleMessage(data);
-      } catch (err) {
-        console.error("Failed to parse message:", err);
-      }
-    });
+        ws.on('message', async (message) => {
+            try {
+                const data = JSON.parse(message.toString());
+                await this.handleMessage(data);
+            } catch (err) {
+                console.error('Failed to parse message:', err);
+            }
+        });
 
-    droneTaskListener.on(this.drone.id, async (data) => {
-      try {
-        await this.handleMessage(data);
-      } catch (err) {
-        console.error("Error handling drone task:", err);
-      }
-    });
-  }
+        ws.on('close', async () => {
+            await this.handleDisconnect();
+        });
 
-  async handleMessage(data: any) {
-    switch (data.type) {
-      case "toDrone:depart":
-        if (this.drone.isOnMission) {
-          console.warn(`Drone ${this.drone.id} is already on a mission.`);
-          return;
+        droneTaskListener.on(this.drone.id, async (data) => {
+            try {
+                await this.handleMessage(data);
+            } catch (err) {
+                console.error('Error handling drone task:', err);
+            }
+        });
+    }
+
+    async handleMessage(data: any) {
+        switch (data.type) {
+            case 'toDrone:depart':
+                if (this.drone.isOnMission) {
+                    console.warn(`Drone ${this.drone.id} is already on a mission.`);
+                    return;
+                }
+                this.drone.isOnMission = true;
+                await this.departTheDrone(data.missionDetails);
+                await this.syncWithDatabase();
+                break;
+            case 'fromDrone:update':
+                await this.updateDroneData(data.droneData);
+                break;
+            case 'fromDrone:missionRaport':
+                await this.processMissionRaport(data.raport);
+                break;
+            case 'fromDrone:cameFromMission':
+                await this.handleCameFromMission();
+                break;
+            default:
+                console.warn(`Unknown message type: ${data.type}`);
         }
-        this.drone.isOnMission = true;
-        await this.departTheDrone(data.missionDetails);
+    }
+
+    async handleDisconnect() {
+        this.drone.isActive = false;
         await this.syncWithDatabase();
-        break;
-      case "fromDrone:update":
-        await this.updateDroneData(data.droneData);
-        break;
-      case "fromDrone:missionRaport":
-        await this.processMissionRaport(data.raport);
-        break;
-      case "fromDrone:cameFromMission":
-        await this.handleCameFromMission();
-        break;
-      default:
-        console.warn(`Unknown message type: ${data.type}`);
-    }
-  }
-
-  async handleDisconnect() {
-    this.drone.isActive = false;
-    await this.syncWithDatabase();
-    this.ws.close();
-  }
-
-  async handleCameFromMission() {
-    this.drone.isOnMission = false;
-    await this.syncWithDatabase();
-
-    // if all drones came back from mission, set mission as completed
-    await prisma.mission.updateMany({
-      where: {
-        drones: {
-          every: { isOnMission: false },
-        },
-      },
-      data: {
-        endTime: new Date(),
-        isCompleted: true,
-      },
-    });
-  }
-
-  async processMissionRaport(raport: MissionRaportDTO) {
-    await validateOrReject(raport);
-    const existingRaport = await prisma.missionReport.findUnique({
-      where: { missionId: raport.missionId },
-    });
-
-    if (existingRaport) {
-      console.warn(
-        `Mission report for mission ${raport.missionId} already exists.`
-      );
-      return;
+        this.ws.close();
     }
 
-    await prisma.missionReport.create({
-      data: {
-        missionId: raport.missionId,
-        droneId: raport.droneId,
-        reportContent: raport.reportContent,
-        reportDate: new Date(),
-        ReportImages: {
-          create: raport.imagesBlobBase64.map((image) => ({
-            imageBlobBase64: image,
-          })),
-        },
-      },
-    });
-  }
+    async handleCameFromMission() {
+        this.drone.isOnMission = false;
+        await this.syncWithDatabase();
 
-  async updateDroneData(droneData: DroneDTO) {
-    await validateOrReject(droneData);
-    this.drone = droneData;
-    await this.syncWithDatabase();
-  }
+        // if all drones came back from mission, set mission as completed
+        await prisma.mission.updateMany({
+            where: {
+                drones: {
+                    every: { isOnMission: false }
+                }
+            },
+            data: {
+                endTime: new Date(),
+                isCompleted: true,
+            }
+        });
+    }
 
-  async departTheDrone(mission: Prisma.MissionCreateInput) {
-    // TODO: send info via WebSocket to the drone
-  }
+    async processMissionRaport(raport: MissionRaportDTO) {
+        raport = await validate(MissionRaportDTO, raport);
+        const existingRaport = await prisma.missionReport.findUnique({
+            where: { missionId: raport.missionId }
+        });
+
+        if (existingRaport) {
+            console.warn(`Mission report for mission ${raport.missionId} already exists.`);
+            return;
+        }
+
+        await prisma.missionReport.create({
+            data: {
+                missionId: raport.missionId,
+                droneId: raport.droneId,
+                reportContent: raport.reportContent,
+                reportDate: new Date(),
+                ReportImages: {
+                    create: raport.imagesBlobBase64.map((image) => ({
+                        imageBlobBase64: image,
+                    }))
+                }
+            }
+        });
+    }
+
+    async updateDroneData(droneData: DroneDTO) {
+        droneData = await validate(DroneDTO, droneData);
+        this.drone = droneData;
+        await this.syncWithDatabase();
+    }
+
+    async departTheDrone(mission: MissionDetailsDTO) {
+        const wsSend = promisify(this.ws.send);
+        await wsSend(JSON.stringify({
+            type: 'toDrone:depart',
+            missionDetails: mission
+        }))
+    }
 }

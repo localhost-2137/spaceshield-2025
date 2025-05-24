@@ -15,6 +15,7 @@
   "devDependencies": {
     "@types/node": "^22.13.0",
     "@types/wellknown": "^0.5.8",
+    "@types/ws": "^8.18.1",
     "cpy-cli": "^5.0.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
@@ -27,5 +28,7 @@
     "vite-plugin-dts-bundle-generator": "^2.1.0",
     "vitest": "3.0.5"
   },
-  "dependencies": {}
+  "dependencies": {
+    "ws": "^8.18.2"
+  }
 }
