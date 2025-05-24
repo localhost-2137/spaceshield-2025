@@ -23,6 +23,13 @@ import DroneSheet from "@/components/DroneSheet";
 import { drone } from "interfaces";
 import droneImage from "../../assets/drone.png";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function MarketPlacePage(): JSX.Element {
   const droneData = useAtomValue(dronesAtom);
@@ -114,22 +121,21 @@ export default function MarketPlacePage(): JSX.Element {
         </div>
         <div className="flex w-full max-w-sm items-center border rounded-lg px-2.5 py-1.5">
           <Warehouse className="h-4 w-4 mr-2.5" />
-          <select
-            onChange={(e) => {
-              setType(e.target.value);
+          <Select
+            onValueChange={(e) => {
+              setType(e === "" ? null : e);
             }}
-            defaultValue={""}
-            className="flex h-9 w-full rounded-md bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value="" disabled >
-              Wybierz typ drona
-            </option>
-            <option value="land">Lądowy</option>
-            <option value="water">Wodny</option>
-            <option value="air">Powietrzny</option>
-            <option value="space">Kosmiczny</option>
-            <option value="">Dowolny</option>
-          </select>
+            <SelectTrigger className="w-full border-none">
+              <SelectValue placeholder="Wybierz typ drona" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="land">Lądowy</SelectItem>
+              <SelectItem value="water">Wodny</SelectItem>
+              <SelectItem value="air">Powietrzny</SelectItem>
+              <SelectItem value="space">Kosmiczny</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <div className="flex items-center justify-evenly w-[70%] flex-wrap">
