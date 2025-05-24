@@ -40,4 +40,52 @@ router.post('/mission', async (req, res) => {
     res.status(201).json(mission);
 });
 
+router.post('/mission/:id/assign', async (req, res) => {
+    const {id} = req.params;
+    const {dronesIds} = req.body;
+
+    if (!Array.isArray(dronesIds) || dronesIds.length === 0) {
+        res.status(400).json({error: 'dronesIds must be a non-empty array'});
+        return;
+    }
+
+    try {
+        const mission = await prisma.mission.update({
+            where: {id},
+            data: {
+                drones: {
+                    connect: dronesIds.map(droneId => ({id: droneId})),
+                },
+            },
+            include: {
+                drones: {
+                    select: {id: true}
+                }
+            },
+        });
+
+        res.json(mission);
+    } catch (err) {
+        console.error('Failed to assign drones to mission:', err);
+        res.status(500).json({error: 'Internal Server Error'});
+    }
+});
+
+// Endpoint to start a mission immediately
+router.post('/mission/:id/start-now', async (req, res) => {
+    const {id} = req.params;
+
+    try {
+        const mission = await prisma.mission.update({
+            where: {id},
+            data: {startTime: new Date()},
+        });
+
+        res.json(mission);
+    } catch (err) {
+        console.error('Failed to start mission:', err);
+        res.status(500).json({error: 'Internal Server Error'});
+    }
+});
+
 export default router;
