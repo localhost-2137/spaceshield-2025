@@ -11,9 +11,9 @@ import {
     Min,
     validateOrReject
 } from 'class-validator';
+import {ClassConstructor, plainToInstance} from 'class-transformer';
 import { prisma } from './prisma';
 import events from 'events';
-import { Prisma } from '@prisma/client';
 import { promisify } from "util";
 
 export class DroneDTO {
@@ -129,6 +129,40 @@ export class MissionRaportDTO {
     imagesBlobBase64: string[] = [];
 }
 
+export class MissionDetailsDTO {
+    @IsNotEmpty()
+    @IsString()
+    id!: string;
+
+    @IsNotEmpty()
+    @IsString()
+    name!: string;
+
+    @IsNotEmpty()
+    @IsString()
+    description!: string;
+
+    @IsNotEmpty()
+    @IsNumber()
+    locationLongitude!: number;
+
+    @IsNotEmpty()
+    @IsNumber()
+    locationLatitude!: number;
+
+    @IsNotEmpty()
+    @IsNumber()
+    startTime!: number;
+
+    @IsOptional()
+    @IsNumber()
+    expectedEndTime?: number;
+
+    @IsNotEmpty()
+    @IsString()
+    goal!: string;
+}
+
 // event emitter for drone tasks:
 const droneTaskListener = new events.EventEmitter();
 
@@ -139,23 +173,52 @@ async function departDronesForMission() {
             id: true,
             missions: {
                 where: { startTime: { lte: new Date() } }, // missions that have started
+                select: {
+                        id: true,
+                        name: true,
+                        description: true,
+                        locationLongitude: true,
+                        locationLatitude: true,
+                        startTime: true,
+                        expectedEndTime: true,
+                        goal: true,
+                }
             }
         },
         where: { isActive: true, isOnMission: false }
     });
 
-    drones.forEach(drone => {
+    const promises = drones.map(async drone => {
         if (drone.missions.length === 0) return;
         if (drone.missions.length > 1) {
             console.warn(`Drone ${drone.id} has multiple missions, sending it to the first one.`);
         }
         const mission = drone.missions[0];
+        let missionDetails: MissionDetailsDTO = {
+            id: mission.id,
+            name: mission.name,
+            description: mission.description,
+            locationLongitude: mission.locationLongitude,
+            locationLatitude: mission.locationLatitude,
+            startTime: mission.startTime.getTime(),
+            expectedEndTime: mission.expectedEndTime ? mission.expectedEndTime.getTime() : undefined,
+            goal: mission.goal
+        };
+        missionDetails = await validate(MissionDetailsDTO, missionDetails);
 
         droneTaskListener.emit(drone.id, {
             type: 'drone:depart',
-            missionDetails: mission
+            missionDetails,
         });
     });
+
+    await Promise.all(promises);
+}
+
+async function validate(cls: ClassConstructor<any>, obj: any): Promise<any> {
+    const instance = plainToInstance(cls, obj);
+    await validateOrReject(instance);
+    return instance;
 }
 
 export class Drone {
@@ -163,7 +226,7 @@ export class Drone {
     private drone: DroneDTO;
 
     public static async fromWebSocket(ws: WebSocket, droneData: DroneDTO): Promise<Drone> {
-        await validateOrReject(droneData);
+        droneData = await validate(DroneDTO, droneData);
         const drone = new Drone(ws, droneData);
 
         await drone.syncWithDatabase();
@@ -255,7 +318,7 @@ export class Drone {
     }
 
     async processMissionRaport(raport: MissionRaportDTO) {
-        await validateOrReject(raport);
+        raport = await validate(MissionRaportDTO, raport);
         const existingRaport = await prisma.missionReport.findUnique({
             where: { missionId: raport.missionId }
         });
@@ -281,12 +344,12 @@ export class Drone {
     }
 
     async updateDroneData(droneData: DroneDTO) {
-        await validateOrReject(droneData);
+        droneData = await validate(DroneDTO, droneData);
         this.drone = droneData;
         await this.syncWithDatabase();
     }
 
-    async departTheDrone(mission: Prisma.MissionCreateInput) {
+    async departTheDrone(mission: MissionDetailsDTO) {
         const wsSend = promisify(this.ws.send);
         await wsSend(JSON.stringify({
             type: 'toDrone:depart',

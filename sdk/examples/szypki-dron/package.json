@@ -1,0 +1,23 @@
+{
+  "name": "spaceshield-2025-szypki-dron",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node .",
+    "prisma:gen": "prisma generate",
+    "watch": "nodemon",
+    "build": "tsc --outDir dist"
+  },
+  "keywords": [],
+  "author": "localhost-2137",
+  "dependencies": {
+    "uber-less-sdk": "file:../../build/"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

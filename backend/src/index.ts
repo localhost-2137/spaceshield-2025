@@ -1,7 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {Server, WebSocket} from 'ws';
-import {initPrisma} from './prisma';
+import {initPrisma, prisma} from './prisma';
 import {Drone} from "./drones";
 
 const app = express();
@@ -14,7 +14,7 @@ const wsServer = new Server({noServer: true});
 async function handleWsMessages(ws: WebSocket, req: any, unsubscribe: () => void) {
     switch (req.type) {
         case 'fromDrone:register':
-            await Drone.fromWebSocket(ws, req.droneData);
+            await Drone.fromWebSocket(ws, req.drone);
             unsubscribe();
             break;
         default:
@@ -35,6 +35,18 @@ wsServer.on('connection', (ws) => {
     };
 
     ws.on('message', handleMessages);
+});
+
+app.get('/drones', async (req, res) => {
+    try {
+        const drones = await prisma.drone.findMany({
+            where: {isActive: true},
+        });
+        res.json(drones);
+    } catch (err) {
+        console.error('Failed to fetch drones:', err);
+        res.status(500).json({error: 'Internal Server Error'});
+    }
 });
 
 async function bootstrap() {

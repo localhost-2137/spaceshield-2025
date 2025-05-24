@@ -1,24 +1,85 @@
 import WebSocket from 'ws';
 
+export interface Location {
+    latitude: number;
+    longitude: number;
+}
+
+export interface GeneralDroneInfo {
+    id: string;
+    name: string;
+    description: string;
+    type: 'land' | 'water' | 'air' | 'space';
+    engineType: 'fuel' | 'electric';
+    maxSpeedKmh: number;
+    maxDistanceKm: number;
+    pricePerHourUSD: number;
+    noiseLevelDb: number;
+    lengthCm: number;
+    widthCm: number;
+    heightCm: number;
+    maxLoadKg: number;
+    specialization: 'rescue' | 'reconnaissance' | 'assault' | 'transport' | 'agriculture' | 'delivery';
+}
+
 interface DroneData {
-    location: { lat: number; lon: number };
-    generalInfo: { id: string; model: string };
+    currentLocation: Location;
+    generalInfo: GeneralDroneInfo;
     batteryPercentage: number;
 }
 
+export interface MissionDetails {
+    id: string;
+    name: string;
+    description: string;
+    locationLongitude: number;
+    locationLatitude: number;
+    startTime: number;
+    expectedEndTime?: number;
+    goal: string;
+}
+
+export interface MissionRaportDTO {
+    missionId: string;
+    droneId: string;
+    reportContent?: string;
+    imagesBlobBase64: string[];
+}
+
+export interface ApiCompatibleDTO {
+    id: string;
+    name: string;
+    description: string;
+    type: 'land' | 'water' | 'air' | 'space';
+    engineType: 'fuel' | 'electric';
+    fuelOrBatteryLevel: number;
+    currentLatitude: number;
+    currentLongitude: number;
+    maxSpeedKmh: number;
+    maxDistanceKm: number;
+    pricePerHourUSD: number;
+    noiseLevelDb: number;
+    lengthCm: number;
+    widthCm: number;
+    heightCm: number;
+    maxLoadKg: number;
+    specialization: 'rescue' | 'reconnaissance' | 'assault' | 'transport' | 'agriculture' | 'delivery';
+}
+
+
 interface RegisterMessage {
     type: 'fromDrone:register';
-    droneData: DroneData;
+    drone: ApiCompatibleDTO;
 }
 
 interface UpdateMessage {
     type: 'fromDrone:update';
-    droneData: DroneData;
+    drone: ApiCompatibleDTO;
 }
 
 interface MissionRaportMessage {
     type: 'fromDrone:missionRaport';
-    raport: any;
+    raport: MissionRaportDTO;
 }
 
 interface CameFromMissionMessage {
@@ -27,41 +88,43 @@ interface CameFromMissionMessage {
 
 interface DepartMessage {
     type: 'toDrone:depart';
-    missionDetails: any;
+    missionDetails: MissionDetails;
 }
 
 type WebSocketMessage = RegisterMessage | UpdateMessage | MissionRaportMessage | CameFromMissionMessage | DepartMessage;
 
 interface DroneSDKOptions {
-    getLocation: () => Promise<{ lat: number; lon: number }>;
-    getGeneralInfo: () => Promise<{ id: string; model: string }>;
+    generalInfo: GeneralDroneInfo;
+    getLocation: () => Promise<Location>;
     getBatteryPercentage: () => Promise<number>;
-    onMissionDepart: (missionDetails: any) => Promise<void>;
-    updateInterval: number; // in milliseconds, default is 1000ms
+    onMissionDepart: (missionDetails: MissionDetails) => Promise<void>;
+    updateInterval?: number; // in milliseconds, default is 1000ms
 }
+
+export const WS_URL = 'ws://localhost:3000';
 
 export class DroneSDK {
     private ws: WebSocket;
-    private readonly getLocation: () => Promise<{ lat: number; lon: number }>;
-    private readonly getGeneralInfo: () => Promise<{ id: string; model: string }>;
+    private readonly getLocation: () => Promise<Location>;
+    private readonly generalInfo: GeneralDroneInfo;
     private readonly getBatteryPercentage: () => Promise<number>;
-    private readonly onMissionDepart: (missionDetails: any) => Promise<void>;
+    private readonly onMissionDepart: (missionDetails: MissionDetails) => Promise<void>;
     private readonly updateInterval: number;
     private previousData: DroneData | null;
     private messageQueue: { message: WebSocketMessage; resolve: () => void; reject: (reason: any) => void }[] = [];
 
-    constructor(wsUrl: string, options: DroneSDKOptions) {
+    constructor(options: DroneSDKOptions) {
         const {
             getLocation,
-            getGeneralInfo,
+            generalInfo,
             getBatteryPercentage,
             onMissionDepart,
             updateInterval = 1000
         } = options;
 
-        this.ws = new WebSocket(wsUrl);
+        this.ws = new WebSocket(WS_URL);
         this.getLocation = getLocation;
-        this.getGeneralInfo = getGeneralInfo;
+        this.generalInfo = generalInfo;
         this.getBatteryPercentage = getBatteryPercentage;
         this.onMissionDepart = onMissionDepart;
         this.updateInterval = updateInterval;
@@ -73,14 +136,42 @@ export class DroneSDK {
         this.ws.on('error', this.onError.bind(this));
     }
 
-    private async onOpen() {
-        const droneData: DroneData = {
-            location: await this.getLocation(),
-            generalInfo: await this.getGeneralInfo(),
-            batteryPercentage: await this.getBatteryPercentage()
+    private dronDataIntoApiCompatibleDTO(droneData: DroneData): ApiCompatibleDTO {
+        return {
+            id: droneData.generalInfo.id,
+            name: droneData.generalInfo.name,
+            description: droneData.generalInfo.description,
+            type: droneData.generalInfo.type,
+            engineType: droneData.generalInfo.engineType,
+            fuelOrBatteryLevel: droneData.batteryPercentage,
+            currentLatitude: droneData.currentLocation.latitude,
+            currentLongitude: droneData.currentLocation.longitude,
+            maxSpeedKmh: droneData.generalInfo.maxSpeedKmh,
+            maxDistanceKm: droneData.generalInfo.maxDistanceKm,
+            pricePerHourUSD: droneData.generalInfo.pricePerHourUSD,
+            noiseLevelDb: droneData.generalInfo.noiseLevelDb,
+            lengthCm: droneData.generalInfo.lengthCm,
+            widthCm: droneData.generalInfo.widthCm,
+            heightCm: droneData.generalInfo.heightCm,
+            maxLoadKg: droneData.generalInfo.maxLoadKg,
+            specialization: droneData.generalInfo.specialization
         };
+    }
 
-        await this.sendMessage({type: 'fromDrone:register', droneData}).catch(error => {
+    private async onOpen() {
+        const [currentLocation, batteryPercentage] = await Promise.all([
+            this.getLocation(),
+            this.getBatteryPercentage()
+        ]);
+
+        const droneData: DroneData = {
+            generalInfo: this.generalInfo,
+            currentLocation,
+            batteryPercentage,
+        };
+        const apiCompatibleDTO = this.dronDataIntoApiCompatibleDTO(droneData);
+
+        await this.sendMessage({type: 'fromDrone:register', drone: apiCompatibleDTO}).catch(error => {
             console.error('Failed to send register message:', error);
         });
 
@@ -121,19 +212,18 @@ export class DroneSDK {
     }
 
     private async checkAndUpdate() {
-        const [location, generalInfo, batteryPercentage] = await Promise.all([
+        const [location, batteryPercentage] = await Promise.all([
             this.getLocation(),
-            this.getGeneralInfo(),
             this.getBatteryPercentage()
         ]);
 
-        const currentData: DroneData = {location, generalInfo, batteryPercentage};
+        const currentData: DroneData = {currentLocation: location, generalInfo: this.generalInfo, batteryPercentage};
 
         if (!this.previousData ||
-            JSON.stringify(currentData.location) !== JSON.stringify(this.previousData.location) ||
+            JSON.stringify(currentData.currentLocation) !== JSON.stringify(this.previousData.currentLocation) ||
             JSON.stringify(currentData.generalInfo) !== JSON.stringify(this.previousData.generalInfo) ||
             currentData.batteryPercentage !== this.previousData.batteryPercentage) {
-            await this.sendMessage({type: 'fromDrone:update', droneData: currentData});
+            await this.sendMessage({type: 'fromDrone:update', drone: this.dronDataIntoApiCompatibleDTO(currentData)});
             this.previousData = {...currentData};
         }
     }
@@ -153,7 +243,7 @@ export class DroneSDK {
         });
     }
 
-    public async sendMissionRaport(raport: any): Promise<void> {
+    public async sendMissionRaport(raport: MissionRaportDTO): Promise<void> {
         await this.sendMessage({type: 'fromDrone:missionRaport', raport});
     }
 
