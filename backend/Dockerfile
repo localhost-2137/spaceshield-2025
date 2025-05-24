@@ -1,13 +1,12 @@
-FROM node:18-slim
+FROM node:20
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
-
 COPY package.json pnpm-lock.yaml ./
 
-RUN npm install -g pnpm
-RUN pnpm i
+RUN pnpm install
 
 COPY . .
-RUN pnpm build
 
-CMD ["node", "index.js"]
+CMD ["pnpm", "watch"]

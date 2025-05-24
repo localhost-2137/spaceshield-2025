@@ -1,9 +1,23 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  pump-controller-server:
+  app:
     build: .
+    container_name: express-dev
     ports:
-      - "5007:3000"
-    restart: always
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - redis
+    command: pnpm watch
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
 
+  redis:
+    image: redis:7
+    container_name: redis-dev
+    ports:
+      - "6379:6379"

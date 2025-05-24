@@ -1,9 +1,11 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {Server, WebSocket} from 'ws';
+import {initPrisma} from './prisma';
+import {initRedis} from './redis';
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
@@ -27,14 +29,22 @@ wsServer.on('connection', (ws) => {
     });
 });
 
+async function bootstrap() {
+    await initPrisma();
+    await initRedis();
 
-const server = app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
-});
-
-server.on('upgrade', (request, socket, head) => {
-    wsServer.handleUpgrade(request, socket, head, (ws) => {
-        wsServer.emit('connection', ws, request);
+    const server = app.listen(port, () => {
+        console.log(`Server running on http://localhost:${port}`);
     });
-});
 
+    server.on('upgrade', (request, socket, head) => {
+        wsServer.handleUpgrade(request, socket, head, (ws) => {
+            wsServer.emit('connection', ws, request);
+        });
+    });
+}
+
+bootstrap().catch((err) => {
+    console.error('Failed to bootstrap the application:', err);
+    process.exit(1);
+});
