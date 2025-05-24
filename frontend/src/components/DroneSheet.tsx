@@ -54,7 +54,7 @@ export default function DroneSheet({
                   <Hammer /> Specjalizacja: {drone.specialization}
                 </p>
                 <p className="flex items-center gap-2">
-                  <Warehouse /> typ pojazdu: {drone.type}
+                  <Warehouse /> Typ pojazdu: {drone.type}
                 </p>
                 <p className="flex items-center gap-2">
                   <MapPin />

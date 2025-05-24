@@ -7,6 +7,7 @@ import MissionsPage from "./Sites/Missions/MissionsPage";
 import AppLandingPage from "./Sites/AppLandingPage/AppLandingPage";
 import MapPage from "./Sites/Map/MapPage";
 import MarketPlacePage from "./Sites/MarketPlacePage/MarketPlacePage";
+import NewMissionPage from "./Sites/Missions/NewMissionPagte";
 
 export default function App(): JSX.Element | null {
   const element = useRoutes([
@@ -25,6 +26,10 @@ export default function App(): JSX.Element | null {
         {
           path: "missions",
           element: <MissionsPage />,
+        },
+        {
+          path: "missions/new",
+          element: <NewMissionPage />,
         },
         {
           path: "globe",

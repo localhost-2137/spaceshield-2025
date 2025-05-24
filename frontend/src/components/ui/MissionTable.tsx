@@ -75,7 +75,11 @@ const sampleData: Mission[] = [
   },
 ];
 
-export default function MissionTable(): JSX.Element {
+export default function MissionTable({
+  raports = false,
+}: {
+  raports?: boolean;
+}): JSX.Element {
   const [data, _setData] = useState<Mission[]>(sampleData);
   const [isLoading, _setIsLoading] = useState<boolean>(false);
 
@@ -87,6 +91,7 @@ export default function MissionTable(): JSX.Element {
           <TableHead>Lok. początkowa</TableHead>
           <TableHead>Lok. końcowa</TableHead>
           <TableHead>Status</TableHead>
+          {raports && <TableHead>Raport</TableHead>}
           <TableHead></TableHead>
         </TableRow>
       </TableHeader>
@@ -97,6 +102,20 @@ export default function MissionTable(): JSX.Element {
             <TableCell>{mission.startLocation}</TableCell>
             <TableCell>{mission.endLocation}</TableCell>
             <TableCell>{mission.status}</TableCell>
+            {raports && (
+              <TableCell>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    // Handle report generation logic here
+                    alert(`Generowanie raportu dla misji ${mission.id}`);
+                  }}
+                >
+                  Generuj Raport
+                </Button>
+              </TableCell>
+            )}
             <TableCell>
               <Dialog>
                 <DialogTrigger>
