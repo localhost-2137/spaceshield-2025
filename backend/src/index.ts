@@ -3,6 +3,9 @@ import bodyParser from 'body-parser';
 import {Server, WebSocket} from 'ws';
 import {initPrisma, prisma} from './prisma';
 import {Drone} from "./drones";
+import {wsFrontServer} from "./front";
+
+import restRouter from './restApi';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -37,17 +40,7 @@ wsServer.on('connection', (ws) => {
     ws.on('message', handleMessages);
 });
 
-app.get('/drones', async (req, res) => {
-    try {
-        const drones = await prisma.drone.findMany({
-            where: {isActive: true},
-        });
-        res.json(drones);
-    } catch (err) {
-        console.error('Failed to fetch drones:', err);
-        res.status(500).json({error: 'Internal Server Error'});
-    }
-});
+app.use(restRouter);
 
 async function bootstrap() {
     await initPrisma();
@@ -58,9 +51,17 @@ async function bootstrap() {
     });
 
     server.on('upgrade', (request, socket, head) => {
-        wsServer.handleUpgrade(request, socket, head, (ws) => {
-            wsServer.emit('connection', ws, request);
-        });
+        switch (request.url || '') {
+            case "/front":
+                wsFrontServer.handleUpgrade(request, socket, head, (ws) => {
+                    wsFrontServer.emit('connection', ws, request);
+                });
+                break;
+            default:
+                wsServer.handleUpgrade(request, socket, head, (ws) => {
+                    wsServer.emit('connection', ws, request);
+                });
+        }
     });
 }
 

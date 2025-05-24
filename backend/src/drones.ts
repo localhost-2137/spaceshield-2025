@@ -15,6 +15,7 @@ import {ClassConstructor, plainToInstance} from 'class-transformer';
 import { prisma } from './prisma';
 import events from 'events';
 import { promisify } from "util";
+import {validateDto} from "./utils";
 
 export class DroneDTO {
     @IsNotEmpty()
@@ -159,8 +160,8 @@ export class MissionDetailsDTO {
     expectedEndTime?: number;
 
     @IsNotEmpty()
-    @IsString()
-    goal!: string;
+    @IsEnum(['rescue', 'reconnaissance', 'assault', 'transport', 'agriculture', 'delivery'])
+    goal!: 'rescue' | 'reconnaissance' | 'assault' | 'transport' | 'agriculture' | 'delivery';
 }
 
 // event emitter for drone tasks:
@@ -202,9 +203,9 @@ async function departDronesForMission() {
             locationLatitude: mission.locationLatitude,
             startTime: mission.startTime.getTime(),
             expectedEndTime: mission.expectedEndTime ? mission.expectedEndTime.getTime() : undefined,
-            goal: mission.goal
+            goal: mission.goal as any,
         };
-        missionDetails = await validate(MissionDetailsDTO, missionDetails);
+        missionDetails = await validateDto(MissionDetailsDTO, missionDetails);
 
         droneTaskListener.emit(drone.id, {
             type: 'drone:depart',
@@ -215,18 +216,14 @@ async function departDronesForMission() {
     await Promise.all(promises);
 }
 
-async function validate(cls: ClassConstructor<any>, obj: any): Promise<any> {
-    const instance = plainToInstance(cls, obj);
-    await validateOrReject(instance);
-    return instance;
-}
+setInterval(departDronesForMission, 1000); // every second check if any drone should depart for a mission
 
 export class Drone {
     private ws: WebSocket;
     private drone: DroneDTO;
 
     public static async fromWebSocket(ws: WebSocket, droneData: DroneDTO): Promise<Drone> {
-        droneData = await validate(DroneDTO, droneData);
+        droneData = await validateDto(DroneDTO, droneData);
         const drone = new Drone(ws, droneData);
 
         await drone.syncWithDatabase();
@@ -318,7 +315,7 @@ export class Drone {
     }
 
     async processMissionRaport(raport: MissionRaportDTO) {
-        raport = await validate(MissionRaportDTO, raport);
+        raport = await validateDto(MissionRaportDTO, raport);
         const existingRaport = await prisma.missionReport.findUnique({
             where: { missionId: raport.missionId }
         });
@@ -344,7 +341,7 @@ export class Drone {
     }
 
     async updateDroneData(droneData: DroneDTO) {
-        droneData = await validate(DroneDTO, droneData);
+        droneData = await validateDto(DroneDTO, droneData);
         this.drone = droneData;
         await this.syncWithDatabase();
     }
