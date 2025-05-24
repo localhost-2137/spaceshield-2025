@@ -156,13 +156,13 @@ export default function NewMissionPage(): JSX.Element {
               />
             </label>
             <label className="flex flex-col">
-              <span className="mb-2">Cel misji</span>
+              <span className="mb-2">Miejsce misji</span>
               <Input
                 type="text"
                 name="missionGoal"
                 value={formData.missionGoal}
                 onChange={handleInputChange}
-                placeholder="Wprowadź cel misji (lat, long)"
+                placeholder="Wprowadź miejsce misji (lat, long)"
                 className="border rounded-lg p-2"
               />
             </label>
