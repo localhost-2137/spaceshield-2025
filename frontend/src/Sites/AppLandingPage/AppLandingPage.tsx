@@ -14,7 +14,7 @@ export default function AppLandingPage(): JSX.Element {
       content: <></>,
       className: "md:col-span-2",
       thumbnail: (
-        <div className="h-full max-h-[360px] border-r-2 border-b-2 p-4 flex relative flex-col gap-4 justify-between pt-16 overflow-y-auto">
+        <div className="h-full max-h-[360px] p-4 flex relative flex-col gap-4 justify-between pt-16 overflow-y-auto">
           <div className="absolute w-full top-0 left-0 z-20 p-4 bg-black">
             <p className="text-2xl font-semibold">Twoje misje</p>
           </div>
@@ -46,7 +46,7 @@ export default function AppLandingPage(): JSX.Element {
       className: "col-span-1",
       thumbnail: (
         <div className="h-full flex flex-col justify-between">
-          <GlobeComponent />
+          <GlobeComponent size="small"/>
         </div>
       ),
     },
@@ -55,7 +55,7 @@ export default function AppLandingPage(): JSX.Element {
       content: <></>,
       className: "md:col-span-2",
       thumbnail: (
-        <div className="h-full max-h-[360px] border-l-2 border-t-2 p-4 flex relative flex-col gap-4 justify-between pt-16 overflow-y-auto">
+        <div className="h-full max-h-[360px] p-4 flex relative flex-col gap-4 justify-between pt-16 overflow-y-auto">
           <div className="absolute w-full top-0 left-0 z-20 p-4 bg-black">
             <p className="text-2xl font-semibold">
               Statystyki (ostatnie 30 dni)
