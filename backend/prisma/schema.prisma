@@ -44,29 +44,30 @@ model MissionReport {
 }
 
 model Drone {
-  id                 String   @id @unique
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  isActive           Boolean  @default(true)
-  isOnMission        Boolean  @default(false)
-  gotFlightPermit    Boolean  @default(false)
-  currentLongitude   Float
-  currentLatitude    Float
-  name               String
-  description        String
-  type               String
-  engineType         String
-  fuelOrBatteryLevel Int
-  maxSpeedKmh        Int
-  maxDistanceKm      Int
-  pricePerHourUSD    Int
-  noiseLevelDb       Int
-  lengthCm           Int
-  widthCm            Int
-  heightCm           Int
-  maxLoadKg          Int
-  specialization     String
-  frequencyHz        Int?
+  id                         String   @id @unique
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+  isActive                   Boolean  @default(true)
+  isOnMission                Boolean  @default(false)
+  gotFlightPermit            Boolean  @default(false)
+  currentLongitude           Float
+  currentLatitude            Float
+  name                       String
+  description                String
+  type                       String
+  engineType                 String
+  fuelOrBatteryLevel         Int
+  maxSpeedKmh                Int
+  maxDistanceKm              Int
+  pricePerHourUSD            Int
+  noiseLevelDb               Int
+  lengthCm                   Int
+  widthCm                    Int
+  heightCm                   Int
+  maxLoadKg                  Int
+  specialization             String
+  frequencyHz                Int?
+  percentageMissionCompleted Float?
 
   missions      Mission[]       @relation("MissionDrones")
   MissionReport MissionReport[]

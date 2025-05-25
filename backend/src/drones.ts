@@ -118,6 +118,10 @@ export class DroneDTO {
     @IsNumber()
     @IsInt()
     frequencyHz?: number;
+
+    @IsOptional()
+    @IsNumber()
+    percentageMissionCompleted?: number;
 }
 
 export class MissionRaportDTO {
@@ -234,6 +238,11 @@ export class Drone {
     private ws: WebSocket;
     private drone: DroneDTO;
 
+    private currentMission: MissionDetailsDTO | null = null;
+
+    private latBeforeMission: number = 0;
+    private lonBeforeMission: number = 0;
+
     private nearbyDrones: { distanceKm: number, frequencyHz: number, id: string }[] = [];
     private nearbyDronesIntervalId: NodeJS.Timeout | null = null;
 
@@ -292,10 +301,10 @@ export class Drone {
 
     async updateNearbyDrones() {
         const mission = await prisma.mission.findFirst({
-            where: { drones: {some: {id: this.drone.id}} },
+            where: {drones: {some: {id: this.drone.id}}},
             select: {id: true}
         });
-        if(!mission) return;
+        if (!mission) return;
 
         const missionId = mission.id;
 
@@ -352,9 +361,7 @@ export class Drone {
                     console.warn(`Drone ${this.drone.id} is already on a mission.`);
                     return;
                 }
-                this.drone.isOnMission = true;
                 await this.departTheDrone(data.missionDetails);
-                await this.syncWithDatabase();
                 break;
             case 'toDrone:getFlightPermit':
                 await this.getFlightPermit();
@@ -386,6 +393,11 @@ export class Drone {
         this.drone.isOnMission = false;
         this.drone.gotFlightPermit = false;
         await this.syncWithDatabase();
+
+        // reset
+        this.latBeforeMission = 0;
+        this.lonBeforeMission = 0;
+        this.currentMission = null;
 
         // if all drones came back from mission, set mission as completed
         await prisma.mission.updateMany({
@@ -428,7 +440,28 @@ export class Drone {
     }
 
     async updateDroneData(droneData: DroneDTO) {
+        let missionCompletedPercentage: number | undefined = undefined;
+        if (this.latBeforeMission || this.lonBeforeMission) {
+            // we are in a mission, somewhere between start location and destination (mission lat/log)
+            // calculate percentage of the mission completed based on current lat/lon
+            const totalDistance = Math.sqrt(
+                Math.pow(this.currentMission!.locationLatitude - this.latBeforeMission, 2) +
+                Math.pow(this.currentMission!.locationLongitude - this.lonBeforeMission, 2)
+            );
+
+            const totalMissionDistance = Math.sqrt(
+                Math.pow(this.currentMission!.locationLatitude - this.latBeforeMission, 2) +
+                Math.pow(this.currentMission!.locationLongitude - this.lonBeforeMission, 2)
+            );
+
+            if (totalMissionDistance > 0) {
+                missionCompletedPercentage = (totalDistance / totalMissionDistance) * 100;
+                missionCompletedPercentage = Math.min(missionCompletedPercentage, 100); // cap at 100%
+            }
+        }
+
         droneData = await validateDto(DroneDTO, droneData);
+        this.drone.percentageMissionCompleted = missionCompletedPercentage;
         this.drone = droneData;
         await this.syncWithDatabase();
     }
@@ -446,6 +479,14 @@ export class Drone {
     }
 
     async departTheDrone(mission: MissionDetailsDTO) {
+        this.drone.isOnMission = true;
+        await this.syncWithDatabase();
+
+        this.latBeforeMission = this.drone.currentLatitude;
+        this.lonBeforeMission = this.drone.currentLongitude;
+
+        this.currentMission = mission;
+
         const wsSend = promisify(this.ws.send);
         await wsSend(JSON.stringify({
             type: 'toDrone:depart',
