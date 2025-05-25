@@ -87,7 +87,9 @@ export default function MissionTable({
             <TableCell>
               {mission.locationLatitude},{mission.locationLongitude}
             </TableCell>
-            <TableCell>Zakończono</TableCell>
+            <TableCell>
+              {mission.isCompleted ? "Zakończono" : "W trakcie"}
+            </TableCell>
             {raports && (
               <TableCell>
                 <Button
@@ -117,23 +119,22 @@ export default function MissionTable({
                         <strong>Id Drona:</strong> 1
                       </p>
                       <p>
-                        <strong>Lokacja początkowa:</strong>{" "}
-                        Stalowa Wola
+                        <strong>Lokacja początkowa:</strong> Stalowa Wola
                       </p>
                       <p>
-                        <strong>Lokacja końcowa:</strong> Kraków{" "}
-                        ({mission.locationLatitude}, {mission.locationLongitude})
+                        <strong>Lokacja końcowa:</strong> Kraków (
+                        {mission.locationLatitude}, {mission.locationLongitude})
                       </p>
                       <p>
-                        <strong>Status:</strong> {mission.isCompleted ? "Zakończona" : "W trakcie"}
+                        <strong>Status:</strong>{" "}
+                        {mission.isCompleted ? "Zakończona" : "W trakcie"}
                       </p>
                       <p>
                         <strong>Czas rozpoczęcia:</strong>{" "}
                         {new Date(mission.startTime).toLocaleString()}
                       </p>
                       <p>
-                        <strong>Czas zakończenia:</strong>{" "}
-                        {"Zakończono"}
+                        <strong>Czas zakończenia:</strong> {new Date(mission.expectedEndTime).toLocaleString()}
                       </p>
                     </DialogDescription>
                   </DialogHeader>

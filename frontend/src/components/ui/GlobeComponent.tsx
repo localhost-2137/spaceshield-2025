@@ -47,6 +47,15 @@ export default function GlobeComponent({
     globeEl.current.controls().autoRotateSpeed = 0.35;
   }, []);
 
+  const arcsData = [
+    {
+      startLat: 51.5074,
+      startLng: -0.1278,
+      endLat: 50.34,
+      endLng: 22.03,
+    },
+  ];
+
   return (
     <>
       <Globe
@@ -54,6 +63,15 @@ export default function GlobeComponent({
         globeImageUrl="//cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg"
         width={size === "large" ? 1920 : 400}
         height={size === "large" ? 1080 : 400}
+        arcsData={arcsData}
+        arcStartLat={(d) => d.startLat}
+        arcStartLng={(d) => d.startLng}
+        arcEndLat={(d) => d.endLat}
+        arcEndLng={(d) => d.endLng}
+        arcColor={() => "red"}
+        arcDashLength={0.4}
+        arcDashGap={0.2}
+        arcDashAnimateTime={1500}
         htmlElementsData={droneLocationData}
         htmlElement={(d: any) => {
           const el = document.createElement("div");
