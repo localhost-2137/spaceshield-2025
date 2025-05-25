@@ -18,6 +18,7 @@ import { Button } from "./button";
 import { List } from "lucide-react";
 import { useEffect, useState } from "react";
 import LoadingCircleSpinner from "./LoadingSpinner";
+import Katastrofa from "../../assets/katastrofa.png";
 
 interface Mission {
   id: string;
@@ -42,6 +43,25 @@ export default function MissionTable({
 }): JSX.Element {
   const [data, setData] = useState<Mission[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [raportToFetchId, setRaportToFetchId] = useState<string | null>(null);
+  const [isRaportLoading, setIsRaportLoading] = useState<boolean>(false);
+  const [raportError, setRaportError] = useState<boolean>(false);
+  const [reportToShow, setReportToShow] = useState<any>();
+  const [_, setImageUrl] = useState<any>(null);
+
+  useEffect(() => {
+    if (
+      reportToShow &&
+      reportToShow.ReportImages &&
+      reportToShow.ReportImages[0].imageBlobBase64 instanceof Blob
+    ) {
+      const blob = reportToShow.ReportImages[0];
+      const url = URL.createObjectURL(blob);
+      setImageUrl(url);
+
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [reportToShow]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -67,6 +87,32 @@ export default function MissionTable({
     fetchData();
   }, []);
 
+  const fetchReport = async (missionId: string) => {
+    if (!missionId) return;
+    try {
+      setIsRaportLoading(true);
+      const response = await fetch(
+        `http://localhost:3000/mission-raport/${missionId}`
+      );
+      if (!response.ok) {
+        setRaportError(true);
+        throw new Error("Network response was not ok");
+      }
+      const reportData = await response.json();
+      console.log("Fetched report data:", reportData);
+      setReportToShow(reportData[0]);
+    } catch (error) {
+      console.error("Error fetching report:", error);
+      setRaportError(true);
+    } finally {
+      setIsRaportLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (raportToFetchId) fetchReport(raportToFetchId);
+  }, [raportToFetchId]);
+
   return data && data.length > 0 ? (
     <Table>
       <TableHeader>
@@ -80,28 +126,50 @@ export default function MissionTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.slice(0, 4).map((mission, i) => (
+        {data.slice(0, 5).map((mission, i) => (
           <TableRow key={mission.id}>
             <TableCell>{i + 1}</TableCell>
             <TableCell>Londyn</TableCell>
-            <TableCell>
-              Stalowa Wola
-            </TableCell>
+            <TableCell>Stalowa Wola</TableCell>
             <TableCell>
               {i !== data.length - 1 ? "Zakończona" : "W trakcie"}
             </TableCell>
             {raports && (
               <TableCell>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    // Handle report generation logic here
-                    alert(`Generowanie raportu dla misji ${mission.id}`);
-                  }}
-                >
-                  Generuj Raport
-                </Button>
+                <Dialog>
+                  <DialogTrigger>
+                    {i !== data.length - 1 && (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          setRaportToFetchId(mission.id);
+                        }}
+                      >
+                        Generuj Raport
+                      </Button>
+                    )}
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Raport z misji</DialogTitle>
+                      <DialogDescription>
+                        {isRaportLoading && <LoadingCircleSpinner />}
+                        {raportError && <p>Wystąpił Błąd</p>}
+                        {reportToShow && (
+                          <>
+                            <p className="my-2">{reportToShow.reportContent}</p>
+                            <img
+                              src={Katastrofa}
+                              className="w-full aspect-video"
+                              alt=""
+                            />
+                          </>
+                        )}
+                      </DialogDescription>
+                    </DialogHeader>
+                  </DialogContent>
+                </Dialog>
               </TableCell>
             )}
             <TableCell>
