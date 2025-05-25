@@ -389,7 +389,7 @@ export default function NewMissionPage(): JSX.Element {
           <DialogTrigger asChild>
             <Button
               variant="default"
-              type="submit"
+              type="button"
               className="w-fit"
               //   disabled={!Object.values(formData).every((val) => val.length > 0)}
             >

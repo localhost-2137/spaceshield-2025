@@ -71,7 +71,7 @@ export default function MissionTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Id Drona</TableHead>
+          <TableHead>Id Misji</TableHead>
           <TableHead>Lok. początkowa</TableHead>
           <TableHead>Lok. końcowa</TableHead>
           <TableHead>Status</TableHead>
@@ -80,15 +80,15 @@ export default function MissionTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.slice(0, 4).map((mission) => (
+        {data.slice(0, 4).map((mission, i) => (
           <TableRow key={mission.id}>
-            <TableCell>1</TableCell>
-            <TableCell>Stalowa Wola</TableCell>
+            <TableCell>{i + 1}</TableCell>
+            <TableCell>Londyn</TableCell>
             <TableCell>
-              {mission.locationLatitude},{mission.locationLongitude}
+              Stalowa Wola
             </TableCell>
             <TableCell>
-              {mission.isCompleted ? "Zakończono" : "W trakcie"}
+              {i !== data.length - 1 ? "Zakończona" : "W trakcie"}
             </TableCell>
             {raports && (
               <TableCell>
@@ -127,14 +127,15 @@ export default function MissionTable({
                       </p>
                       <p>
                         <strong>Status:</strong>{" "}
-                        {mission.isCompleted ? "Zakończona" : "W trakcie"}
+                        {i !== data.length - 1 ? "Zakończona" : "W trakcie"}
                       </p>
                       <p>
                         <strong>Czas rozpoczęcia:</strong>{" "}
                         {new Date(mission.startTime).toLocaleString()}
                       </p>
                       <p>
-                        <strong>Czas zakończenia:</strong> {new Date(mission.expectedEndTime).toLocaleString()}
+                        <strong>Czas zakończenia:</strong>{" "}
+                        {new Date(mission.expectedEndTime).toLocaleString()}
                       </p>
                     </DialogDescription>
                   </DialogHeader>
