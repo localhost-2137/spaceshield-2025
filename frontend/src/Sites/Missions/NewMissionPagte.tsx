@@ -57,12 +57,13 @@ export default function NewMissionPage(): JSX.Element {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [selectedDronesIds, setSelectedDronesIds] = useState<string[]>([]);
   const [formData, setFormData] = useState({
-    missionName: "",
-    missionGoal: "",
-    missionDescription: "",
+    name: "",
+    locationLongitude: "",
+    locationLatitude: "",
+    description: "",
     startTime: "",
-    endTime: "",
-    missionType: "",
+    expectedEndTime: "",
+    goal: "",
   });
 
   const handleInputChange = (
@@ -74,11 +75,22 @@ export default function NewMissionPage(): JSX.Element {
       [name]: value,
     }));
   };
+  const handleLocationInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const value = e.target.value;
+    const [latitude, longitude] = value.split(",").map((v) => v.trim());
+    setFormData((prev) => ({
+      ...prev,
+      locationLatitude: latitude,
+      locationLongitude: longitude,
+    }));
+  };
 
   const handleMissionTypeChange = (value: string) => {
     setFormData((prev) => ({
       ...prev,
-      missionType: value,
+      goal: value,
     }));
   };
 
@@ -88,8 +100,21 @@ export default function NewMissionPage(): JSX.Element {
       drones: selectedDronesIds,
     };
     console.log("Nowa misja:", mission);
-    // Możesz dodać wysyłkę do backendu, reset, przekierowanie itd.
-    //TODO: zaimplementować łącze z API do tworzenia misji
+    fetch("/api/mission", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(mission),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Misja została utworzona:", data);
+        navigate("/app/missions");
+      })
+      .catch((error) => {
+        console.error("Błąd podczas tworzenia misji:", error);
+      });
   };
 
   useEffect(() => {
@@ -148,8 +173,8 @@ export default function NewMissionPage(): JSX.Element {
               <span className="mb-2">Nazwa misji</span>
               <Input
                 type="text"
-                name="missionName"
-                value={formData.missionName}
+                name="name"
+                value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Wprowadź nazwę misji"
                 className="border rounded-lg p-2"
@@ -159,9 +184,7 @@ export default function NewMissionPage(): JSX.Element {
               <span className="mb-2">Miejsce misji</span>
               <Input
                 type="text"
-                name="missionGoal"
-                value={formData.missionGoal}
-                onChange={handleInputChange}
+                onChange={handleLocationInputChange}
                 placeholder="Wprowadź miejsce misji (lat, long)"
                 className="border rounded-lg p-2"
               />
@@ -169,8 +192,8 @@ export default function NewMissionPage(): JSX.Element {
             <label className="flex flex-col">
               <span className="mb-2">Opis misji</span>
               <textarea
-                name="missionDescription"
-                value={formData.missionDescription}
+                name="description"
+                value={formData.description}
                 onChange={handleInputChange}
                 placeholder="Wprowadź opis misji"
                 className="border border-input bg-transparent p-4 rounded-xl"
@@ -192,8 +215,8 @@ export default function NewMissionPage(): JSX.Element {
               <span className="mb-2">Data i godzina zakończenia</span>
               <Input
                 type="datetime-local"
-                name="endTime"
-                value={formData.endTime}
+                name="expectedEndTime"
+                value={formData.expectedEndTime}
                 onChange={handleInputChange}
                 className="border rounded-lg p-2"
               />
@@ -202,7 +225,7 @@ export default function NewMissionPage(): JSX.Element {
               <span className="mb-2">Typ misji</span>
               <Select
                 onValueChange={handleMissionTypeChange}
-                value={formData.missionType}
+                value={formData.goal}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Wybierz typ misji" />
@@ -366,7 +389,7 @@ export default function NewMissionPage(): JSX.Element {
               variant="default"
               type="submit"
               className="w-fit"
-              disabled={!Object.values(formData).every((val) => val.length > 0)}
+              //   disabled={!Object.values(formData).every((val) => val.length > 0)}
             >
               Zleć misję
             </Button>
@@ -379,17 +402,17 @@ export default function NewMissionPage(): JSX.Element {
               </DialogDescription>
             </DialogHeader>
             <div>
-              <strong>Nazwa:</strong> {formData.missionName}
+              <strong>Nazwa:</strong> {formData.name}
               <br />
-              <strong>Cel:</strong> {formData.missionGoal}
+              <strong>Cel:</strong> {formData.goal}
               <br />
-              <strong>Opis:</strong> {formData.missionDescription}
+              <strong>Opis:</strong> {formData.description}
               <br />
               <strong>Start:</strong> {formData.startTime}
               <br />
-              <strong>Koniec:</strong> {formData.endTime}
+              <strong>Koniec:</strong> {formData.expectedEndTime}
               <br />
-              <strong>Typ:</strong> {formData.missionType}
+              <strong>Typ:</strong> {formData.goal}
               <br />
               <strong>Drony:</strong> {selectedDronesIds.join(", ")}
               <br />
@@ -398,7 +421,7 @@ export default function NewMissionPage(): JSX.Element {
                 const drone = droneData.find((d) => d.id === droneId);
                 if (drone) {
                   const hours = Math.ceil(
-                    (new Date(formData.endTime).getTime() -
+                    (new Date(formData.expectedEndTime).getTime() -
                       new Date(formData.startTime).getTime()) /
                       (1000 * 60 * 60)
                   );

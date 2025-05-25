@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "./button";
 import { List } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LoadingCircleSpinner from "./LoadingSpinner";
 
 interface Mission {
@@ -80,8 +80,32 @@ export default function MissionTable({
 }: {
   raports?: boolean;
 }): JSX.Element {
-  const [data, _setData] = useState<Mission[]>(sampleData);
-  const [isLoading, _setIsLoading] = useState<boolean>(false);
+  const [data, setData] = useState<Mission[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      fetch("api/missions")
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          setData(data);
+        });
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return data && data.length > 0 ? (
     <Table>
@@ -165,7 +189,7 @@ export default function MissionTable({
       </TableBody>
       {data.length > 3 && (
         <div className="mt-4 -ml-8 text-center">
-          <Button variant="outline" onClick={() => _setData(sampleData)}>
+          <Button variant="outline" onClick={() => setData(sampleData)}>
             Pokaż więcej misji
           </Button>
         </div>

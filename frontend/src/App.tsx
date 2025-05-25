@@ -51,6 +51,7 @@ export default function App(): JSX.Element | null {
   if (!element) return null;
   const socketRef = useRef<WebSocket | null>(null);
 
+  
   useEffect(() => {
     // Tworzymy połączenie WebSocket
     socketRef.current = new WebSocket("ws://localhost:3000/front");
