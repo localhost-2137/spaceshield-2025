@@ -36,8 +36,14 @@ router.get('/missions', async (req, res) => {
 });
 
 router.post('/mission', async (req, res) => {
-    const createDTO: CreateMissionDTO = await validateDto(CreateMissionDTO, req.body);
-    // all dron exists for sure as well dto is valid
+    let createDTO: CreateMissionDTO;
+    try {
+        createDTO = await validateDto(CreateMissionDTO, req.body)
+    } catch (e) {
+        console.error(e);
+        res.status(400).json({error: 'Invalid request data'});
+        return;
+    }
 
     let prismaCompatibleDtoClone = JSON.parse(JSON.stringify(createDTO)); // deep clone to avoid mutation
     delete prismaCompatibleDtoClone.dronesIds;

@@ -66,6 +66,7 @@ model Drone {
   heightCm           Int
   maxLoadKg          Int
   specialization     String
+  frequencyHz        Int?
 
   missions      Mission[]       @relation("MissionDrones")
   MissionReport MissionReport[]

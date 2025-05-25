@@ -2,7 +2,7 @@ import {WebSocket} from 'ws';
 import {
     IsArray,
     IsBoolean,
-    IsEnum,
+    IsEnum, IsInt,
     IsNotEmpty,
     IsNumber,
     IsOptional,
@@ -112,6 +112,12 @@ export class DroneDTO {
     @IsNotEmpty()
     @IsBoolean()
     gotFlightPermit: boolean = false;
+
+    @IsOptional()
+    @IsNotEmpty()
+    @IsNumber()
+    @IsInt()
+    frequencyHz?: number;
 }
 
 export class MissionRaportDTO {
@@ -221,15 +227,22 @@ async function departDronesForMission() {
 
 setInterval(departDronesForMission, 1000); // every second check if any drone should depart for a mission
 
+const MIN_DRON_HZ = 100; // minimum frequency for drone communication in Hz
+const MAX_DRON_HZ = 1000; // maximum frequency for drone communication in Hz
+
 export class Drone {
     private ws: WebSocket;
     private drone: DroneDTO;
+
+    private nearbyDrones: { distanceKm: number, frequencyHz: number, id: string }[] = [];
+    private nearbyDronesIntervalId: NodeJS.Timeout | null = null;
 
     public static async fromWebSocket(ws: WebSocket, droneData: DroneDTO): Promise<Drone> {
         droneData = await validateDto(DroneDTO, droneData);
         const drone = new Drone(ws, droneData);
 
         await drone.syncWithDatabase();
+        await drone.updateNearbyDronesInterval();
 
         return drone;
     }
@@ -257,6 +270,10 @@ export class Drone {
 
         ws.on('close', async () => {
             await this.handleDisconnect();
+            if (this.nearbyDronesIntervalId) {
+                clearInterval(this.nearbyDronesIntervalId);
+                this.nearbyDronesIntervalId = null;
+            }
         });
 
         droneTaskListener.on(this.drone.id, async (data) => {
@@ -266,6 +283,66 @@ export class Drone {
                 console.error('Error handling drone task:', err);
             }
         });
+    }
+
+    // Updates list of the nearest drones within the mission
+    async updateNearbyDronesInterval() {
+        this.nearbyDronesIntervalId = setInterval(this.updateNearbyDrones.bind(this), 5000);
+    }
+
+    async updateNearbyDrones() {
+        const mission = await prisma.mission.findFirst({
+            where: { drones: {some: {id: this.drone.id}} },
+            select: {id: true}
+        });
+        if(!mission) return;
+
+        const missionId = mission.id;
+
+        const nearbyDrones = await prisma.drone.findMany({
+            where: {
+                isActive: true,
+                isOnMission: true,
+                missions: {
+                    some: {id: missionId}
+                },
+                id: {not: this.drone.id}, // exclude itself
+                currentLatitude: {
+                    gte: this.drone.currentLatitude - 0.1, // 0.1 degree ~ 11 km
+                    lte: this.drone.currentLatitude + 0.1,
+                },
+                currentLongitude: {
+                    gte: this.drone.currentLongitude - 0.1,
+                    lte: this.drone.currentLongitude + 0.1,
+                },
+            },
+            select: {
+                id: true,
+                name: true,
+                currentLatitude: true,
+                currentLongitude: true,
+            }
+        });
+
+        this.nearbyDrones = nearbyDrones.map(drone => {
+            const latDiff = drone.currentLatitude - this.drone.currentLatitude;
+            const lonDiff = drone.currentLongitude - this.drone.currentLongitude;
+            const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+
+            const distanceKm = distance * 111; // ~111 km per degree of latitude/longitude
+
+            return {
+                id: drone.id,
+                distanceKm,
+                frequencyHz: this.drone.frequencyHz || -1, // Assuming frequencyHz is set on the drone
+            };
+        });
+
+        const wsSend = promisify(this.ws.send);
+        await wsSend(JSON.stringify({
+            type: 'nearbyDronesUpdate',
+            data: nearbyDrones
+        }));
     }
 
     async handleMessage(data: any) {

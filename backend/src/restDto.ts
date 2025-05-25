@@ -1,4 +1,4 @@
-import {IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString} from "class-validator";
+import {IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min} from "class-validator";
 
 export class CreateMissionDTO {
     @IsNotEmpty()
@@ -11,10 +11,14 @@ export class CreateMissionDTO {
 
     @IsNotEmpty()
     @IsNumber()
+    @Min(-180)
+    @Max(180)
     locationLongitude!: number;
 
     @IsNotEmpty()
     @IsNumber()
+    @Min(-90)
+    @Max(90)
     locationLatitude!: number;
 
     @IsNotEmpty()
