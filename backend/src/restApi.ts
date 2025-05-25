@@ -35,6 +35,23 @@ router.get('/missions', async (req, res) => {
     }
 });
 
+router.get('/mission-raport/:id', async (req, res) => {
+    const {id} = req.params;
+    try {
+        const mission = await prisma.missionReport.findMany({
+            where: {
+                mission: {id},
+            },
+            include: { ReportImages: true }
+        });
+
+        res.json(mission);
+    } catch (err) {
+        console.error('Failed to fetch mission report:', err);
+        res.status(500).json({error: 'Internal Server Error'});
+    }
+});
+
 router.post('/mission', async (req, res) => {
     let createDTO: CreateMissionDTO;
     try {

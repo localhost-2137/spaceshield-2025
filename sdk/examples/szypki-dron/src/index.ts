@@ -1,4 +1,6 @@
 import {DroneSDK, GeneralDroneInfo, MissionDetails, MissionRaportDTO} from 'uber-less-sdk';
+import fs from 'fs';
+import path from 'path';
 
 // Drone configuration
 const generalInfo: GeneralDroneInfo = {
@@ -202,10 +204,8 @@ async function simulateReturnFlight(startLat: number, startLon: number, endLat: 
 
 // Generate a base64 image blob (simulating a captured photo)
 function generateSimulatedPhoto(): string {
-    // This is a minimal 1x1 pixel PNG in base64 (red pixel)
-    // In reality, this would be actual image data from the drone's camera
-    const miniPng = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
-    return miniPng;
+    const file = fs.readFileSync(path.join(__dirname, 'katastrofa.png'));
+    return file.toString('base64');
 }
 
 async function generateAndSendReport(mission: MissionDetails) {

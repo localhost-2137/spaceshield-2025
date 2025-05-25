@@ -6,8 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="90717aea-3de8-40cc-807d-ea938c773218" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prisma/dev.db" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/dev.db" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/drones.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/drones.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/restApi.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/restApi.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sdk/examples/szypki-dron/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../sdk/examples/szypki-dron/src/index.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,6 +77,8 @@
       <workItem from="1748134745778" duration="257000" />
       <workItem from="1748135032495" duration="330000" />
       <workItem from="1748135599744" duration="593000" />
+      <workItem from="1748137579122" duration="3342000" />
+      <workItem from="1748141358526" duration="315000" />
     </task>
     <servers />
   </component>

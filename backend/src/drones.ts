@@ -180,11 +180,15 @@ export class MissionDetailsDTO {
 // event emitter for drone tasks:
 export const droneTaskListener = new events.EventEmitter();
 
+// We shouldn't do that, but who cares:
+const dronesAlreadyDeparted: string[] = [];
+
 async function departDronesForMission() {
     // query drones, which right now should be on mission but are not
-    const drones = await prisma.drone.findMany({
+    let drones = await prisma.drone.findMany({
         select: {
             id: true,
+            isOnMission: true,
             missions: {
                 where: {startTime: {lte: new Date()}}, // missions that have started
                 select: {
@@ -199,8 +203,10 @@ async function departDronesForMission() {
                 }
             }
         },
-        where: {isActive: true, isOnMission: false}
+        where: {isActive: { equals: true }, isOnMission: { equals: false }},
     });
+    drones = drones.filter(drone => drone.missions.length > 0); // only those with missions
+    drones = drones.filter(drone => !dronesAlreadyDeparted.includes(drone.id));
 
     const promises = drones.map(async drone => {
         if (drone.missions.length === 0) return;
@@ -220,8 +226,10 @@ async function departDronesForMission() {
         };
         missionDetails = await validateDto(MissionDetailsDTO, missionDetails);
 
+        dronesAlreadyDeparted.push(drone.id);
+
         droneTaskListener.emit(drone.id, {
-            type: 'drone:depart',
+            type: 'toDrone:depart',
             missionDetails,
         });
     });
@@ -229,7 +237,9 @@ async function departDronesForMission() {
     await Promise.all(promises);
 }
 
-setInterval(departDronesForMission, 1000); // every second check if any drone should depart for a mission
+setTimeout(() => {
+    setInterval(departDronesForMission, 1000); // every second check if any drone should depart for a mission
+}, 2000);
 
 const MIN_DRON_HZ = 100; // minimum frequency for drone communication in Hz
 const MAX_DRON_HZ = 1000; // maximum frequency for drone communication in Hz
@@ -278,6 +288,7 @@ export class Drone {
         });
 
         ws.on('close', async () => {
+            console.warn(`Drone ${this.drone.id} disconnected.`);
             await this.handleDisconnect();
             if (this.nearbyDronesIntervalId) {
                 clearInterval(this.nearbyDronesIntervalId);
@@ -347,9 +358,9 @@ export class Drone {
             };
         });
 
-        const wsSend = promisify(this.ws.send);
+        const wsSend = promisify(this.ws.send.bind(this.ws));
         await wsSend(JSON.stringify({
-            type: 'nearbyDronesUpdate',
+            type: 'toDrone:nearbyDronesUpdate',
             data: nearbyDrones
         }));
     }
@@ -361,7 +372,7 @@ export class Drone {
                     console.warn(`Drone ${this.drone.id} is already on a mission.`);
                     return;
                 }
-                await this.departTheDrone(data.missionDetails);
+                await this.departTheDrone(data.missionDetails)
                 break;
             case 'toDrone:getFlightPermit':
                 await this.getFlightPermit();
@@ -370,10 +381,11 @@ export class Drone {
                 await this.gotFlightPermit();
                 break;
             case 'fromDrone:update':
-                await this.updateDroneData(data.droneData);
+                await this.updateDroneData(data.drone);
                 break;
             case 'fromDrone:missionRaport':
                 await this.processMissionRaport(data.raport);
+                await this.handleCameFromMission();
                 break;
             case 'fromDrone:cameFromMission':
                 await this.handleCameFromMission();
@@ -432,7 +444,7 @@ export class Drone {
                 reportDate: new Date(),
                 ReportImages: {
                     create: raport.imagesBlobBase64.map((image) => ({
-                        imageBlobBase64: image,
+                        imageBlobBase64: Buffer.from(image, 'base64'),
                     }))
                 }
             }
@@ -444,9 +456,9 @@ export class Drone {
         if (this.latBeforeMission || this.lonBeforeMission) {
             // we are in a mission, somewhere between start location and destination (mission lat/log)
             // calculate percentage of the mission completed based on current lat/lon
-            const totalDistance = Math.sqrt(
-                Math.pow(this.currentMission!.locationLatitude - this.latBeforeMission, 2) +
-                Math.pow(this.currentMission!.locationLongitude - this.lonBeforeMission, 2)
+            const totalTraveledDistance = Math.sqrt(
+                Math.pow(droneData.currentLatitude - this.latBeforeMission, 2) +
+                Math.pow(droneData.currentLongitude - this.lonBeforeMission, 2)
             );
 
             const totalMissionDistance = Math.sqrt(
@@ -455,9 +467,11 @@ export class Drone {
             );
 
             if (totalMissionDistance > 0) {
-                missionCompletedPercentage = (totalDistance / totalMissionDistance) * 100;
+                missionCompletedPercentage = (totalTraveledDistance / totalMissionDistance) * 100;
                 missionCompletedPercentage = Math.min(missionCompletedPercentage, 100); // cap at 100%
             }
+
+            console.log(`Drone ${this.drone.id} mission completed: ${missionCompletedPercentage}%`);
         }
 
         droneData = await validateDto(DroneDTO, droneData);
@@ -472,8 +486,7 @@ export class Drone {
     }
 
     async getFlightPermit() {
-        const wsSend = promisify(this.ws.send);
-        await wsSend(JSON.stringify({
+        this.ws.send(JSON.stringify({
             type: 'toDrone:getFlightPermit'
         }));
     }
@@ -482,15 +495,15 @@ export class Drone {
         this.drone.isOnMission = true;
         await this.syncWithDatabase();
 
+
         this.latBeforeMission = this.drone.currentLatitude;
         this.lonBeforeMission = this.drone.currentLongitude;
 
         this.currentMission = mission;
 
-        const wsSend = promisify(this.ws.send);
-        await wsSend(JSON.stringify({
+        this.ws.send(JSON.stringify({
             type: 'toDrone:depart',
             missionDetails: mission
-        }))
+        }));
     }
 }

@@ -25,9 +25,10 @@ model Mission {
 }
 
 model ReportImage {
-  id       Int           @id @default(autoincrement())
-  reportId Int
-  report   MissionReport @relation(fields: [reportId], references: [id])
+  id              Int           @id @default(autoincrement())
+  reportId        Int
+  report          MissionReport @relation(fields: [reportId], references: [id])
+  imageBlobBase64 Bytes
 }
 
 model MissionReport {
