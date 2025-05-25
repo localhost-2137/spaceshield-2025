@@ -58,8 +58,8 @@ export default function NewMissionPage(): JSX.Element {
   const [selectedDronesIds, setSelectedDronesIds] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: "",
-    locationLongitude: "",
-    locationLatitude: "",
+    locationLongitude: 0,
+    locationLatitude: 0,
     description: "",
     startTime: "",
     expectedEndTime: "",
@@ -82,8 +82,8 @@ export default function NewMissionPage(): JSX.Element {
     const [latitude, longitude] = value.split(",").map((v) => v.trim());
     setFormData((prev) => ({
       ...prev,
-      locationLatitude: latitude,
-      locationLongitude: longitude,
+      locationLatitude: +latitude,
+      locationLongitude: +longitude,
     }));
   };
 
@@ -94,11 +94,16 @@ export default function NewMissionPage(): JSX.Element {
     }));
   };
 
-  const handleFormSubmit = () => {
+  const handleFormSubmit = (e: any) => {
+    e.preventDefault();
     const mission = {
       ...formData,
       drones: selectedDronesIds,
     };
+    //@ts-ignore
+    mission.startTime = new Date(mission.startTime).getTime();
+    //@ts-ignore
+    mission.expectedEndTime = new Date(mission.expectedEndTime).getTime();
     console.log("Nowa misja:", mission);
     fetch("/api/mission", {
       method: "POST",
@@ -161,10 +166,7 @@ export default function NewMissionPage(): JSX.Element {
     >
       <form
         className="w-2/3 p-6 rounded-lg shadow-md flex flex-col gap-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleFormSubmit();
-        }}
+        onSubmit={handleFormSubmit}
       >
         <h1 className="text-3xl font-bold mb-4">Nowa Misja</h1>
         <div className="flex flex-row gap-4">

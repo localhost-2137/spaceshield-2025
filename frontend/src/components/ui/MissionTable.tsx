@@ -20,60 +20,20 @@ import { useEffect, useState } from "react";
 import LoadingCircleSpinner from "./LoadingSpinner";
 
 interface Mission {
-  id: number;
-  startLocation: string;
-  endLocation: string;
-  status: "Zakończona" | "W trakcie" | "Anulowana";
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  isCompleted: boolean;
+  name: string;
+  description: string;
+  locationLongitude: number;
+  locationLatitude: number;
   startTime: string;
-  endTime?: string;
-  droneId: string;
-  startLan: number;
-  startLon: number;
-  endLan: number;
-  endLon: number;
+  expectedEndTime: string;
+  goal: string;
+  endTime: any;
+  drones: any[];
 }
-
-const sampleData: Mission[] = [
-  {
-    id: 1,
-    startLocation: "Warszawa",
-    endLocation: "Kraków",
-    status: "W trakcie",
-    startTime: "2023-10-01T10:00:00Z",
-    endTime: "2023-10-01T12:00:00Z",
-    droneId: "DR12345",
-    startLan: 52.2297,
-    startLon: 21.0122,
-    endLan: 50.0647,
-    endLon: 19.945,
-  },
-  {
-    id: 2,
-    startLocation: "Wrocław",
-    endLocation: "Poznań",
-    status: "Zakończona",
-    startTime: "2023-10-02T09:00:00Z",
-    endTime: "2023-10-02T11:00:00Z",
-    droneId: "DR67890",
-    startLan: 51.1079,
-    startLon: 17.0385,
-    endLan: 52.4084,
-    endLon: 16.9342,
-  },
-  {
-    id: 3,
-    startLocation: "Gdańsk",
-    endLocation: "Sopot",
-    status: "Anulowana",
-    startTime: "2023-10-03T08:00:00Z",
-    endTime: "2023-10-03T09:30:00Z",
-    droneId: "DR54321",
-    startLan: 54.352,
-    startLon: 18.6466,
-    endLan: 54.4416,
-    endLon: 18.5605,
-  },
-];
 
 export default function MissionTable({
   raports = false,
@@ -86,7 +46,7 @@ export default function MissionTable({
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      fetch("api/missions")
+      await fetch("http://localhost:3000/missions")
         .then((response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok");
@@ -122,10 +82,12 @@ export default function MissionTable({
       <TableBody>
         {data.slice(0, 4).map((mission) => (
           <TableRow key={mission.id}>
-            <TableCell>{mission.droneId}</TableCell>
-            <TableCell>{mission.startLocation}</TableCell>
-            <TableCell>{mission.endLocation}</TableCell>
-            <TableCell>{mission.status}</TableCell>
+            <TableCell>1</TableCell>
+            <TableCell>Stalowa Wola</TableCell>
+            <TableCell>
+              {mission.locationLatitude},{mission.locationLongitude}
+            </TableCell>
+            <TableCell>Zakończono</TableCell>
             {raports && (
               <TableCell>
                 <Button
@@ -152,19 +114,18 @@ export default function MissionTable({
                     <DialogTitle>Więcej informacji</DialogTitle>
                     <DialogDescription>
                       <p>
-                        <strong>Id Drona:</strong> {mission.droneId}
+                        <strong>Id Drona:</strong> 1
                       </p>
                       <p>
                         <strong>Lokacja początkowa:</strong>{" "}
-                        {mission.startLocation} ({mission.startLan},{" "}
-                        {mission.startLon})
+                        Stalowa Wola
                       </p>
                       <p>
-                        <strong>Lokacja końcowa:</strong> {mission.endLocation}{" "}
-                        ({mission.endLan}, {mission.endLon})
+                        <strong>Lokacja końcowa:</strong> Kraków{" "}
+                        ({mission.locationLatitude}, {mission.locationLongitude})
                       </p>
                       <p>
-                        <strong>Status:</strong> {mission.status}
+                        <strong>Status:</strong> {mission.isCompleted ? "Zakończona" : "W trakcie"}
                       </p>
                       <p>
                         <strong>Czas rozpoczęcia:</strong>{" "}
@@ -172,12 +133,7 @@ export default function MissionTable({
                       </p>
                       <p>
                         <strong>Czas zakończenia:</strong>{" "}
-                        {mission.status === "Zakończona"
-                          ? mission.endTime &&
-                            new Date(mission.endTime).toLocaleString()
-                          : mission.status === "Anulowana"
-                          ? "Misja anulowana"
-                          : "N/A"}
+                        {"Zakończono"}
                       </p>
                     </DialogDescription>
                   </DialogHeader>
@@ -189,7 +145,7 @@ export default function MissionTable({
       </TableBody>
       {data.length > 3 && (
         <div className="mt-4 -ml-8 text-center">
-          <Button variant="outline" onClick={() => setData(sampleData)}>
+          <Button variant="outline" onClick={() => {}}>
             Pokaż więcej misji
           </Button>
         </div>
